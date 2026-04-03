@@ -134,7 +134,7 @@ if [[ "$INSTALL_PKGS" -eq 1 && "$DRY_RUN" -eq 0 ]] && command -v dnf >/dev/null 
   echo "Installing packages with dnf (use --no-packages to skip)..."
   run sudo dnf install -y \
     sway waybar wlogout \
-    kitty fuzzel \
+    kitty fuzzel btop \
     grim slurp wl-clipboard \
     python3-gobject gtk3 \
     google-noto-sans-mono-vf-fonts fontawesome-6-free-fonts fontawesome-6-brands-fonts \
@@ -142,7 +142,7 @@ if [[ "$INSTALL_PKGS" -eq 1 && "$DRY_RUN" -eq 0 ]] && command -v dnf >/dev/null 
   echo "Optional: pip install --user autotiling  |  wallpaper picker needs python3-gobject + gtk3"
 else
   if [[ "$INSTALL_PKGS" -eq 1 ]]; then
-    echo "dnf not found; install sway, waybar, wlogout, kitty, fuzzel, grim, slurp, wl-clipboard, python3-gobject, gtk3, fonts."
+    echo "dnf not found; install sway, waybar, wlogout, kitty, fuzzel, btop, grim, slurp, wl-clipboard, python3-gobject, gtk3, fonts."
   fi
 fi
 
