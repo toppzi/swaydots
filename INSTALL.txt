@@ -1,0 +1,28 @@
+Sway dotfiles bundle
+====================
+
+Keep this folder anywhere you like (e.g. ~/Documents/sway-dotfiles). Scripts use paths
+under ~/.config only when installing or packing from your live session.
+
+Contents:
+  sway/      — main config, Catppuccin window colours, wallpaper scripts + picker, screenshots
+  waybar/    — Catppuccin bar, power button → wlogout
+  wlogout/   — layout + style (icons from system wlogout package)
+
+Quick install (Fedora):
+  cd sway-dotfiles
+  chmod +x install.sh pack.sh
+  ./install.sh
+
+The installer copies into ~/.config/, backs up any existing sway/waybar/wlogout folders,
+and runs dnf to install dependencies (unless you pass --no-packages).
+
+Update the bundle from your current machine before sharing:
+  ./pack.sh
+
+Then archive the whole sway-dotfiles folder (or use the suggested tar command printed by pack.sh).
+
+You must still edit ~/.config/sway/config after a fresh install:
+  • output ... lines for your monitors (swaymsg -t get_outputs)
+  • $term, $browser, workspace → output if your setup differs
+  • Wallpaper directory: default in wallpaper-picker.py is WALLPAPER_DIR or /mnt/HDD/Wallpapers — set env or change the default.
