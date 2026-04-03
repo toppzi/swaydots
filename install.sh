@@ -206,11 +206,15 @@ if [[ "$DRY_RUN" -eq 0 ]]; then
   while IFS= read -r -d '' f; do
     chmod +x "$f"
   done < <(find "$CONFIG/sway" "$CONFIG/waybar" -type f \( -name '*.sh' -o -name 'wallpaper-picker.py' \) -print0 2>/dev/null || true)
-  chmod +x "$CONFIG/sway/theme-switch.sh"
-  if command -v envsubst >/dev/null 2>&1; then
-    "$CONFIG/sway/theme-switch.sh" catppuccin --no-reload || true
-  else
-    echo "Note: install gettext (envsubst) to use ~/.config/sway/theme-switch.sh for unified themes."
+  if [[ -f "$CONFIG/sway/theme-switch.sh" ]]; then
+    chmod +x "$CONFIG/sway/theme-switch.sh"
+  fi
+  if [[ -x "$CONFIG/sway/theme-switch.sh" ]] && [[ -d "$CONFIG/sway/themes/palettes" ]] && command -v envsubst >/dev/null 2>&1; then
+    "$CONFIG/sway/theme-switch.sh" catppuccin --no-reload 2>/dev/null || true
+  elif ! command -v envsubst >/dev/null 2>&1; then
+    echo "Note: install gettext (envsubst) for the theme switcher (Mod+Shift+t)."
+  elif [[ ! -d "$CONFIG/sway/themes/palettes" ]]; then
+    echo "Note: missing ~/.config/sway/themes/ — copy sway/themes from this repo, then run: ~/.config/sway/theme-switch.sh catppuccin"
   fi
 fi
 
@@ -218,4 +222,4 @@ echo
 echo "Done. Reload Sway: \$mod+Shift+c"
 echo "Review monitor layout: ~/.config/sway/config (output ...) and workspace → output lines."
 echo "If WALLPAPER_DIR is new, log out and back in so desktop apps inherit it, or start a new login session."
-echo "Theme switcher needs ~/.config/sway/themes/ — if Mod+Shift+t broke after upgrading, re-run ./install.sh or copy sway/themes from this repo."
+echo "Theme switcher (Mod+Shift+t): needs ~/.config/sway/themes/ from the repo; re-run ./install.sh after git pull if it is missing."
