@@ -1,6 +1,6 @@
 # swaydots
 
-[Sway](https://github.com/swaywm/sway) dotfiles for **Fedora** (and similar setups): tiling WM, **Waybar**, **Fuzzel** launcher, **Kitty** terminal, **wlogout**, wallpapers, screenshots, and a **unified theme switcher** (Catppuccin default, plus Nord, Gruvbox, Dracula, and Rainbow).
+[Sway](https://github.com/swaywm/sway) dotfiles for **Fedora** (and similar setups): tiling WM, **Waybar**, **Fuzzel** launcher, **Kitty** terminal, **wlogout**, wallpapers, screenshots, and a **unified theme switcher** with **18** dark and light palettes (Catppuccin variants, Nord, Gruvbox, Dracula, Tokyo Night, Solarized, One, Everforest, Rosé Pine, Rainbow, and more).
 
 Repository: [github.com/toppzi/swaydots](https://github.com/toppzi/swaydots)
 
@@ -69,7 +69,16 @@ What **`./install.sh`** does:
 
 ## Theme switcher
 
-Five coordinated themes: **catppuccin**, **nord**, **gruvbox**, **dracula**, **rainbow** (bright multi-accent). Each run updates:
+**18 themes** — run **`~/.config/sway/theme-switch.sh list`** for exact ids. Overview:
+
+| Dark | Light |
+|------|-------|
+| catppuccin (Mocha), catppuccin-frappe, catppuccin-macchiato | **catppuccin-latte** |
+| dracula, everforest-dark, gruvbox, nord, one-dark, rose-pine | **everforest-light**, **one-light**, **rose-pine-dawn** |
+| solarized-dark, tokyo-night | **solarized-light**, **tokyo-night-day** |
+| rainbow (multi-accent) | — |
+
+Each run updates:
 
 - **`~/.config/sway/config.d/40-theme.conf`** — Sway window borders  
 - **`~/.config/waybar/style.css`**  
@@ -85,7 +94,7 @@ Five coordinated themes: **catppuccin**, **nord**, **gruvbox**, **dracula**, **r
 
 After a switch, Sway reloads and Waybar/Kitty get refresh signals. **Restart Thunar** if GTK chrome does not update.
 
-**GTK:** Names in **`sway/themes/palettes/*.env`** (`GTK_THEME=…`) must match themes installed on your system, or GTK will fall back. **Rainbow** uses **`Adwaita-dark`** for GTK. Adjust **`GTK_THEME`** in those `.env` files if your distro uses different package names.
+**GTK:** Names in **`sway/themes/palettes/*.env`** (`GTK_THEME=…`) must match themes installed on your system, or GTK will fall back. Light palettes use **`Adwaita`**; most dark ones use **`Adwaita-dark`**. Adjust **`GTK_THEME`** per `.env` if you use Nordic, Dracula GTK, etc.
 
 Palette keys and templates are documented in **`sway/themes/README.md`**.
 

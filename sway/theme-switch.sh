@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Apply a unified theme to Sway borders, Waybar, Kitty, Fuzzel, and GTK (Thunar).
 # Usage: theme-switch.sh [theme|menu|list] [--no-reload]
-# Themes: catppuccin, nord, gruvbox, dracula, rainbow
+# Themes: run `theme-switch.sh list` (18 palettes: dark + light)
 #
 # Note: Sway runs "exec" with a minimal PATH — do not use pipefail on the fuzzel pipeline.
 set -eu
@@ -14,7 +14,12 @@ TPL="$SCRIPT_DIR/themes/tpl"
 STATE="$CONFIG/sway/active-theme"
 KITTY_THEMES="$CONFIG/kitty/themes"
 
-THEME_NAMES=(catppuccin nord gruvbox dracula rainbow)
+THEME_NAMES=(
+  catppuccin catppuccin-frappe catppuccin-latte catppuccin-macchiato
+  dracula everforest-dark everforest-light gruvbox nord
+  one-dark one-light rainbow rose-pine rose-pine-dawn
+  solarized-dark solarized-light tokyo-night tokyo-night-day
+)
 RELOAD=1
 
 notify_err() {
@@ -42,7 +47,7 @@ Usage: theme-switch.sh [menu|list|<theme>] [--no-reload]
 
   menu          Pick a theme with fuzzel (default when run with no arguments).
   list          Print theme names.
-  <theme>       One of: catppuccin, nord, gruvbox, dracula, rainbow
+  <theme>       Run `theme-switch.sh list` for all names (18 themes).
 
   --no-reload   Do not swaymsg reload / signal waybar & kitty (for install scripts).
 
