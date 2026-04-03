@@ -6,9 +6,9 @@
 }
 
 window#waybar {
-    background-color: rgba(30, 30, 46, 0.92);
-    border-bottom: 2px solid rgba(108, 112, 134, 0.65);
-    color: #cdd6f4;
+    background-color: rgba(${BASE_R}, ${BASE_G}, ${BASE_B}, 0.92);
+    border-bottom: 2px solid rgba(${OVL0_R}, ${OVL0_G}, ${OVL0_B}, 0.65);
+    color: #${TEXT};
     transition-property: background-color;
     transition-duration: 0.3s;
 }
@@ -18,7 +18,7 @@ window#waybar.hidden {
 }
 
 window#waybar.termite {
-    background-color: #313244;
+    background-color: #${SURFACE0};
 }
 
 window#waybar.chromium {
@@ -34,32 +34,32 @@ button {
 
 button:hover {
     background: inherit;
-    box-shadow: inset 0 -2px #89b4fa;
+    box-shadow: inset 0 -2px #${ACCENT};
 }
 
 #workspaces button {
     padding: 0 5px;
     background-color: transparent;
-    color: #cdd6f4;
+    color: #${TEXT};
 }
 
 #workspaces button:hover {
-    background: rgba(137, 180, 250, 0.18);
+    background: rgba(${ACCENT_R}, ${ACCENT_G}, ${ACCENT_B}, 0.18);
 }
 
 #workspaces button.focused {
-    background-color: #45475a;
-    box-shadow: inset 0 -2px #89b4fa;
+    background-color: #${SURFACE1};
+    box-shadow: inset 0 -2px #${ACCENT};
 }
 
 #workspaces button.urgent {
-    background-color: #f38ba8;
-    color: #1e1e2e;
+    background-color: #${RED};
+    color: #${BASE};
 }
 
 #mode {
-    background-color: #585b70;
-    box-shadow: inset 0 -2px #cba6f7;
+    background-color: #${SURFACE2};
+    box-shadow: inset 0 -2px #${MAUVE};
 }
 
 #clock,
@@ -81,8 +81,8 @@ button:hover {
 #custom-power,
 #mpd {
     padding: 0 10px;
-    background-color: #313244;
-    color: #cdd6f4;
+    background-color: #${SURFACE0};
+    color: #${TEXT};
 }
 
 #window,
@@ -100,8 +100,8 @@ button:hover {
 
 #battery.charging,
 #battery.plugged {
-    background-color: #a6e3a1;
-    color: #1e1e2e;
+    background-color: #${GREEN};
+    color: #${BASE};
 }
 
 @keyframes blink {
@@ -111,8 +111,8 @@ button:hover {
 }
 
 #battery.critical:not(.charging) {
-    background-color: #f38ba8;
-    color: #1e1e2e;
+    background-color: #${RED};
+    color: #${BASE};
     animation-name: blink;
     animation-duration: 0.5s;
     animation-timing-function: steps(12);
@@ -127,17 +127,17 @@ button:hover {
 #power-profiles-daemon.performance,
 #power-profiles-daemon.balanced,
 #power-profiles-daemon.power-saver {
-    background-color: #313244;
-    color: #cdd6f4;
+    background-color: #${SURFACE0};
+    color: #${TEXT};
 }
 
 label:focus {
-    background-color: #313244;
+    background-color: #${SURFACE0};
 }
 
 #network.disconnected {
-    background-color: #fab387;
-    color: #1e1e2e;
+    background-color: #${PEACH};
+    color: #${BASE};
 }
 
 #pulseaudio:hover,
@@ -149,17 +149,17 @@ label:focus {
 #idle_inhibitor:hover,
 #custom-power:hover,
 #tray:hover {
-    background-color: #45475a;
+    background-color: #${SURFACE1};
 }
 
 #pulseaudio.muted {
-    background-color: #313244;
-    color: #7f849c;
+    background-color: #${SURFACE0};
+    color: #${MUTE};
 }
 
 #wireplumber.muted {
-    background-color: #f38ba8;
-    color: #1e1e2e;
+    background-color: #${RED};
+    color: #${BASE};
 }
 
 #custom-media {
@@ -168,13 +168,13 @@ label:focus {
 
 #custom-media.custom-spotify,
 #custom-media.custom-vlc {
-    background-color: #313244;
-    color: #cdd6f4;
+    background-color: #${SURFACE0};
+    color: #${TEXT};
 }
 
 #temperature.critical {
-    background-color: #f9e2af;
-    color: #1e1e2e;
+    background-color: #${YELLOW};
+    color: #${BASE};
 }
 
 #tray > .passive {
@@ -183,36 +183,36 @@ label:focus {
 
 #tray > .needs-attention {
     -gtk-icon-effect: highlight;
-    background-color: #f38ba8;
+    background-color: #${RED};
 }
 
 #idle_inhibitor.activated {
-    background-color: #cba6f7;
-    color: #1e1e2e;
+    background-color: #${MAUVE};
+    color: #${BASE};
 }
 
 #mpd.disconnected {
-    background-color: #f38ba8;
-    color: #1e1e2e;
+    background-color: #${RED};
+    color: #${BASE};
 }
 
 #mpd.stopped,
 #mpd.paused {
-    background-color: #313244;
-    color: #cdd6f4;
+    background-color: #${SURFACE0};
+    color: #${TEXT};
 }
 
 #language {
-    background: #313244;
-    color: #cdd6f4;
+    background: #${SURFACE0};
+    color: #${TEXT};
     padding: 0 5px;
     margin: 0 5px;
     min-width: 16px;
 }
 
 #keyboard-state {
-    background: #313244;
-    color: #cdd6f4;
+    background: #${SURFACE0};
+    color: #${TEXT};
     padding: 0 0;
     margin: 0 5px;
     min-width: 16px;
@@ -223,7 +223,7 @@ label:focus {
 }
 
 #keyboard-state > label.locked {
-    background: #585b70;
+    background: #${SURFACE2};
 }
 
 #scratchpad.empty {
@@ -236,12 +236,12 @@ label:focus {
 
 #privacy-item {
     padding: 0 5px;
-    color: #cdd6f4;
+    color: #${TEXT};
 }
 
 #privacy-item.screenshare,
 #privacy-item.audio-in,
 #privacy-item.audio-out {
-    background-color: #313244;
-    color: #cdd6f4;
+    background-color: #${SURFACE0};
+    color: #${TEXT};
 }

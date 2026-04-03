@@ -93,13 +93,8 @@ gaps outer 5
 # Always keep outer gaps visible
 smart_gaps off
 
-### Theme (Catppuccin Mocha)
-# class                 border    background text      indicator child_border
-client.focused          #89b4fa   #313244    #cdd6f4   #89b4fa   #89b4fa
-client.focused_inactive #6c7086   #313244    #bac2de   #6c7086   #6c7086
-client.unfocused        #585b70   #1e1e2e    #a6adc8   #585b70   #585b70
-client.urgent           #f38ba8   #f38ba8    #1e1e2e   #f38ba8   #f38ba8
-client.placeholder      #45475a   #1e1e2e    #a6adc8   #45475a   #45475a
+### Theme
+# Window colours are in ~/.config/sway/config.d/40-theme.conf (managed by theme-switch.sh).
 
 ### Key bindings
 #
@@ -113,6 +108,9 @@ client.placeholder      #45475a   #1e1e2e    #a6adc8   #45475a   #45475a
 
     # Start your launcher
     bindsym $mod+a exec fuzzel
+
+    # Theme switcher (Sway, Waybar, Kitty, Fuzzel, GTK/Thunar)
+    bindsym $mod+Shift+t exec /bin/bash $HOME/.config/sway/theme-switch.sh
 
     # Applications
     bindsym $mod+b exec $browser

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Install Sway dotfiles (Catppuccin-themed sway, waybar, wlogout, kitty, fuzzel, wallpaper picker).
+# Install Sway dotfiles (sway, waybar, wlogout, kitty, fuzzel, theme switcher, wallpaper picker).
 # Run from the extracted sway-dotfiles directory: ./install.sh
 set -euo pipefail
 
@@ -136,13 +136,13 @@ if [[ "$INSTALL_PKGS" -eq 1 && "$DRY_RUN" -eq 0 ]] && command -v dnf >/dev/null 
     sway waybar wlogout \
     kitty fuzzel btop \
     grim slurp wl-clipboard \
-    python3-gobject gtk3 \
+    python3-gobject gtk3 gettext \
     google-noto-sans-mono-vf-fonts fontawesome-6-free-fonts fontawesome-6-brands-fonts \
     || true
   echo "Optional: pip install --user autotiling  |  wallpaper picker needs python3-gobject + gtk3"
 else
   if [[ "$INSTALL_PKGS" -eq 1 ]]; then
-    echo "dnf not found; install sway, waybar, wlogout, kitty, fuzzel, btop, grim, slurp, wl-clipboard, python3-gobject, gtk3, fonts."
+    echo "dnf not found; install sway, waybar, wlogout, kitty, fuzzel, btop, grim, slurp, wl-clipboard, python3-gobject, gtk3, gettext (envsubst), fonts."
   fi
 fi
 
@@ -206,9 +206,16 @@ if [[ "$DRY_RUN" -eq 0 ]]; then
   while IFS= read -r -d '' f; do
     chmod +x "$f"
   done < <(find "$CONFIG/sway" "$CONFIG/waybar" -type f \( -name '*.sh' -o -name 'wallpaper-picker.py' \) -print0 2>/dev/null || true)
+  chmod +x "$CONFIG/sway/theme-switch.sh"
+  if command -v envsubst >/dev/null 2>&1; then
+    "$CONFIG/sway/theme-switch.sh" catppuccin --no-reload || true
+  else
+    echo "Note: install gettext (envsubst) to use ~/.config/sway/theme-switch.sh for unified themes."
+  fi
 fi
 
 echo
 echo "Done. Reload Sway: \$mod+Shift+c"
 echo "Review monitor layout: ~/.config/sway/config (output ...) and workspace → output lines."
 echo "If WALLPAPER_DIR is new, log out and back in so desktop apps inherit it, or start a new login session."
+echo "Theme switcher needs ~/.config/sway/themes/ — if Mod+Shift+t broke after upgrading, re-run ./install.sh or copy sway/themes from this repo."
