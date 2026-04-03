@@ -5,7 +5,7 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 # shellcheck source=/dev/null
 source "$SCRIPT_DIR/wallpaper-lib.sh"
 
-WALLPAPER_DIR="${WALLPAPER_DIR:-/mnt/HDD/Wallpapers}"
+WALLPAPER_DIR="${WALLPAPER_DIR:-$HOME/Pictures/wallpapers}"
 MODE="${WALLPAPER_MODE:-fill}"
 
 if [[ ! -d "$WALLPAPER_DIR" ]]; then

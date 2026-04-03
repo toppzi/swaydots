@@ -15,6 +15,12 @@ rsync -a --delete \
 
 rsync -a --delete "$SRC/waybar/" "$SCRIPT_DIR/waybar/"
 rsync -a --delete "$SRC/wlogout/" "$SCRIPT_DIR/wlogout/"
+if [[ -d "$SRC/kitty" ]]; then
+  rsync -a --delete "$SRC/kitty/" "$SCRIPT_DIR/kitty/"
+fi
+if [[ -d "$SRC/fuzzel" ]]; then
+  rsync -a --delete "$SRC/fuzzel/" "$SCRIPT_DIR/fuzzel/"
+fi
 
 echo "Packed from $SRC into $SCRIPT_DIR"
 echo "Next: tar czf sway-dotfiles.tar.gz -C $(dirname "$SCRIPT_DIR") $(basename "$SCRIPT_DIR")"

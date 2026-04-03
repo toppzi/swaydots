@@ -36,7 +36,9 @@ except (ImportError, ValueError) as e:
     print("Install: sudo dnf install python3-gobject gtk3", file=sys.stderr)
     sys.exit(1)
 
-WALLPAPER_DIR = os.environ.get("WALLPAPER_DIR", "/mnt/HDD/Wallpapers")
+WALLPAPER_DIR = os.environ.get(
+    "WALLPAPER_DIR", os.path.expanduser("~/Pictures/wallpapers")
+)
 WALLPAPER_MODE = os.environ.get("WALLPAPER_MODE", "fill")
 STATE_DIR = os.path.join(
     os.environ.get("XDG_STATE_HOME", os.path.expanduser("~/.local/state")), "sway"

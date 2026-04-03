@@ -112,7 +112,7 @@ client.placeholder      #45475a   #1e1e2e    #a6adc8   #45475a   #45475a
     bindsym $mod+q kill
 
     # Start your launcher
-    bindsym $mod+a exec fuzzel --no-exit-on-keyboard-focus-loss
+    bindsym $mod+a exec fuzzel
 
     # Applications
     bindsym $mod+b exec $browser
