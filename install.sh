@@ -16,6 +16,9 @@ COMPOSITOR_CLI=""
 CHOSEN_SESSION="sway"
 DO_DNF_SWAY=0
 DO_DNF_HYPR=0
+# Fedora Hyprland from COPR + full walkthrough (netinstall / COPR enable):
+URL_FEDORA_HYPR_TUTORIAL="https://discussion.fedoraproject.org/t/tutorial-fedora-43-install-hyprland-from-scratch/168386"
+HYPR_FEDORA_COPR_MAIN="solopasha/hyprland"
 
 UI_init() {
   if [[ -t 1 && -z "${NO_COLOR:-}" ]]; then
@@ -39,7 +42,7 @@ ui_err() {
 UI_init
 
 usage() {
-  sed -n '1,130p' <<'EOF'
+  sed -n '1,135p' <<'EOF'
 Usage: install.sh [options]
 
   Copies sway/, waybar/, wlogout/, kitty/, fuzzel/, and hypr/ (Hyprland starter with Waybar
@@ -75,6 +78,9 @@ After install:
   - If a display manager was installed here, reboot (or start that service) so graphical login uses it.
   - Sway: edit ~/.config/sway/config for monitors (output ...) and personal apps ($term, etc.).
   - Hyprland: ~/.config/hypr/hyprland.conf is installed when Hyprland is used (Waybar exec-once).
+    On Fedora, if hyprland is missing from default repos, the installer may enable COPR
+    solopasha/hyprland and retry; see also:
+    https://discussion.fedoraproject.org/t/tutorial-fedora-43-install-hyprland-from-scratch/168386
 EOF
 }
 
@@ -521,9 +527,26 @@ verify_chosen_compositor_installed() {
     exit 1
   fi
   if [[ "$DO_DNF_HYPR" -eq 1 ]] && ! rpm_have hyprland; then
-    ui_err "hyprland did not install — check dnf errors above, then: sudo dnf install hyprland (needs Fedora updates repo)"
+    ui_err "hyprland did not install — check dnf errors above."
+    printf '%s  Fedora: sudo dnf copr enable %s && sudo dnf install hyprland%s\n' "$UI_DIM" "$HYPR_FEDORA_COPR_MAIN" "$UI_R" >&2
+    printf '%s  Walkthrough: %s%s\n' "$UI_DIM" "$URL_FEDORA_HYPR_TUTORIAL" "$UI_R" >&2
     exit 1
   fi
+}
+
+dnf_install_system_packages() {
+  if run sudo dnf install -y "$@"; then
+    return 0
+  fi
+  if [[ "$DO_DNF_HYPR" -eq 1 ]] && rpm -q fedora-release &>/dev/null; then
+    ui_warn "dnf failed — Hyprland on Fedora is often packaged via COPR ($HYPR_FEDORA_COPR_MAIN); see $URL_FEDORA_HYPR_TUTORIAL"
+    ui_warn "Enabling COPR $HYPR_FEDORA_COPR_MAIN and retrying install…"
+    run sudo dnf copr enable -y "$HYPR_FEDORA_COPR_MAIN"
+    run sudo dnf install -y "$@"
+    return 0
+  fi
+  ui_err "dnf install failed — see output above"
+  return 1
 }
 
 prompt_display_manager() {
@@ -725,7 +748,9 @@ build_system_pkgs_array
 if [[ "$INSTALL_PKGS" -eq 1 && "$DRY_RUN" -eq 0 ]] && command -v dnf >/dev/null 2>&1; then
   ui_section "System packages"
   printf '%s · %sInstalling dependencies with dnf (use --no-packages to skip)…%s\n' "$UI_CYN" "$UI_DIM" "$UI_R"
-  run sudo dnf install -y "${SYSTEM_PKGS[@]}"
+  if ! dnf_install_system_packages "${SYSTEM_PKGS[@]}"; then
+    exit 1
+  fi
   verify_chosen_compositor_installed
   if [[ "$CHOSEN_SESSION" == "sway" ]] || rpm_have sway; then
     printf '\n%s · optional: pip install --user autotiling · wallpaper picker deps are covered by dnf above%s\n' "$UI_DIM" "$UI_R"
@@ -733,6 +758,9 @@ if [[ "$INSTALL_PKGS" -eq 1 && "$DRY_RUN" -eq 0 ]] && command -v dnf >/dev/null 
 elif [[ "$INSTALL_PKGS" -eq 1 && "$DRY_RUN" -eq 1 ]] && command -v dnf >/dev/null 2>&1; then
   ui_section "System packages"
   printf '%s[dry-run]%s would: sudo dnf install -y %s\n' "$UI_YLW" "$UI_R" "${SYSTEM_PKGS[*]}"
+  if [[ "$DO_DNF_HYPR" -eq 1 ]]; then
+    printf '%s[dry-run]%s if that failed on Fedora: would enable COPR %s then retry (see %s)\n' "$UI_YLW" "$UI_R" "$HYPR_FEDORA_COPR_MAIN" "$URL_FEDORA_HYPR_TUTORIAL"
+  fi
   if [[ "$CHOSEN_SESSION" == "sway" ]] || [[ "$DO_DNF_SWAY" -eq 1 ]]; then
     printf '%s · optional (Sway): pip install --user autotiling%s\n' "$UI_DIM" "$UI_R"
   fi

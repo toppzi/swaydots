@@ -70,6 +70,8 @@ What **`./install.sh`** does:
 
 **Hyprland:** when Hyprland is installed or selected, the installer copies **`hypr/hyprland.conf`**, which **`exec-once`s Waybar**, dbus activation env, and a **polkit** agent (path may need adjusting — see comments in that file). Sway-only installs skip **`~/.config/hypr`**. Extend **`hyprland.conf`** with monitors from **`hyprctl monitors`** and binds from the [Hyprland wiki](https://wiki.hyprland.org/Configuring/).
 
+**Hyprland on Fedora:** the **`hyprland`** RPM is not always in the default repos on a minimal install. This installer, if **`dnf`** fails while you chose Hyprland, enables the **[solopasha/hyprland](https://copr.fedorainfracloud.org/coprs/solopasha/hyprland/)** COPR on Fedora and retries (same idea as the community walkthrough [Tutorial: Fedora 43 — Install Hyprland from scratch](https://discussion.fedoraproject.org/t/tutorial-fedora-43-install-hyprland-from-scratch/168386)). If install still fails, that thread and **`dnf`** output are the best next steps.
+
 **After install:** log out and back in (or reboot) so **`environment.d`** applies and **`wallpaper.sh` / `wallpaper-picker.py`** see **`WALLPAPER_DIR`**. If a display manager was installed or switched, reboot (or start that service) so graphical login uses it.
 
 ### Installer flags
