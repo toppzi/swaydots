@@ -51,12 +51,19 @@ chmod +x install.sh pack.sh
 
 What **`./install.sh`** does:
 
-1. Backs up existing `~/.config/{sway,waybar,wlogout,kitty,fuzzel}` with a timestamp if present, then copies those folders from the repo.
-2. On Fedora (when **`dnf`** is available and you do not pass **`--no-packages`**), runs **`sudo dnf install`** for Sway, Waybar, wlogout, Kitty, Fuzzel, **btop**, grim/slurp, wl-clipboard, **gettext** (provides **`envsubst`** for themes), Python/GTK for the wallpaper picker, and fonts.
-3. Prompts for a **wallpaper directory** (default **`~/Pictures/wallpapers`**) and writes **`WALLPAPER_DIR`** to **`~/.config/environment.d/99-sway-dotfiles-wallpaper.conf`**, then creates that directory.
-4. Makes shell scripts executable and, if **`envsubst`** and **`~/.config/sway/themes/palettes/`** exist, runs **`theme-switch.sh catppuccin --no-reload`** once so Waybar, Sway borders, Fuzzel, Kitty, and GTK settings line up with Catppuccin.
+1. Shows a short banner (ANSI colours on a TTY; set **`NO_COLOR=1`** to disable).
+2. Prompts for a **wallpaper directory** (default **`~/Pictures/wallpapers`**) unless you pass **`--wallpaper-dir`**; that path is used later for **`environment.d`** and **`~/Pictures/wallpapers`** is created if needed.
+3. If no display manager package (**sddm**, **lightdm**, **gdm**, **ly**) is installed, asks which to install (or use **`--display-manager`**, **`--skip-display-manager`**, or **`--no-packages`** as documented below).
+4. On Fedora (when **`dnf`** is available and you do not pass **`--no-packages`**):
+   - Runs **`sudo dnf install`** for **`dnf-plugins-core`**, Sway, Waybar, wlogout, Kitty, Fuzzel, **btop**, grim/slurp, wl-clipboard, **gettext** (**`envsubst`** for themes), Python/GTK for the wallpaper picker, and fonts.
+   - Installs **pavucontrol** if it is missing.
+   - Enables the **[linuxgamerlife/lgl-system-loadout](https://copr.fedorainfracloud.org/coprs/linuxgamerlife/lgl-system-loadout/)** COPR and installs **`lgl-system-loadout`** ([LGL System Loadout](https://github.com/linuxgamerlife/lgl-system-loadout) — see **Thanks** below).
+   - Installs the chosen display manager (if any) and enables its systemd service.
+5. Writes **`WALLPAPER_DIR`** to **`~/.config/environment.d/99-sway-dotfiles-wallpaper.conf`**.
+6. Backs up existing `~/.config/{sway,waybar,wlogout,kitty,fuzzel}` with a timestamp if present, then copies those folders from the repo.
+7. Makes shell scripts executable and, if **`envsubst`** and **`~/.config/sway/themes/palettes/`** exist, runs **`theme-switch.sh catppuccin --no-reload`** once so Waybar, Sway borders, Fuzzel, Kitty, and GTK settings line up with Catppuccin.
 
-**After install:** log out and back in (or reboot) so **`environment.d`** applies and **`wallpaper.sh` / `wallpaper-picker.py`** see **`WALLPAPER_DIR`**.
+**After install:** log out and back in (or reboot) so **`environment.d`** applies and **`wallpaper.sh` / `wallpaper-picker.py`** see **`WALLPAPER_DIR`**. If a display manager was installed or switched, reboot (or start that service) so graphical login uses it.
 
 ### Installer flags
 
@@ -65,6 +72,8 @@ What **`./install.sh`** does:
 | `--dry-run` | Print actions only |
 | `--no-packages` | Skip `dnf`; you install packages yourself |
 | `--wallpaper-dir PATH` | Set wallpaper path without prompting (`~` expanded) |
+| `--display-manager NAME` | When no DM is installed: install **NAME** (`sddm`, `lightdm`, `gdm`, or `ly`) without prompting |
+| `--skip-display-manager` | Do not check, prompt, or install a display manager |
 | `-h` / `--help` | Usage |
 
 ## Theme switcher
@@ -136,6 +145,10 @@ To copy your live configs back into this repo before committing:
 ```
 
 This rsyncs **`sway`**, **`waybar`**, **`wlogout`**, and (if they exist under **`~/.config`**) **`kitty`** and **`fuzzel`**. It does **not** create **`kitty/`** or **`fuzzel/`** in the repo until those dirs exist on your machine.
+
+## Thanks
+
+Thanks to **[linuxgamerlife / lgl-system-loadout](https://github.com/linuxgamerlife/lgl-system-loadout)** for **LGL System Loadout**, a curated Fedora setup wizard for gaming, content creation, and development. The swaydots installer enables its COPR repository and installs **`lgl-system-loadout`** so you can open **LGL System Loadout** from your application menu and extend your system beyond these dotfiles.
 
 ## Requirements
 
