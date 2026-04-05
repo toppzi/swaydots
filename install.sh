@@ -254,18 +254,19 @@ prompt_keyboard_layout() {
   while true; do
     printf '\n%s▶ %sKeyboard layout (XKB)%s\n' "$UI_MAG" "$UI_BLD" "$UI_R"
     printf '%s%s%s\n' "$UI_DIM" "$(printf '─%.0s' {1..58})" "$UI_R"
-    printf '%s Choose layout for Sway and Hyprland:%s\n\n' "$UI_R" "$UI_R"
-    printf '   %s1)%s us     %s·%s US English\n' "$UI_CYN" "$UI_R" "$UI_DIM" "$UI_R"
-    printf '   %s2)%s se     %s·%s Swedish\n' "$UI_CYN" "$UI_R" "$UI_DIM" "$UI_R"
-    printf '   %s3)%s gb     %s·%s UK English\n' "$UI_CYN" "$UI_R" "$UI_DIM" "$UI_R"
-    printf '   %s4)%s no     %s·%s Norwegian\n' "$UI_CYN" "$UI_R" "$UI_DIM" "$UI_R"
-    printf '   %s5)%s dk     %s·%s Danish\n' "$UI_CYN" "$UI_R" "$UI_DIM" "$UI_R"
-    printf '   %s6)%s fi     %s·%s Finnish\n' "$UI_CYN" "$UI_R" "$UI_DIM" "$UI_R"
-    printf '   %s7)%s de     %s·%s German\n' "$UI_CYN" "$UI_R" "$UI_DIM" "$UI_R"
-    printf '   %s8)%s fr     %s·%s French\n' "$UI_CYN" "$UI_R" "$UI_DIM" "$UI_R"
-    printf '   %s9)%s es     %s·%s Spanish\n' "$UI_CYN" "$UI_R" "$UI_DIM" "$UI_R"
-    printf '   %so)%s        %s·%s Other — type xkb code (e.g. pl, nl, ru, ch)\n\n' "$UI_YLW" "$UI_R" "$UI_DIM" "$UI_R"
-    read -r -p "$(printf '%s▶%s Enter 1–9, o, or press Enter for us [us]: ' "$UI_CYN" "$UI_R")" choice || true
+    printf '%s Each number sets the same layout code for Sway and Hyprland:%s\n' "$UI_R" "$UI_R"
+    printf '%s   %s1=us  2=se  3=gb(UK)  4=no  5=dk  6=fi  7=de  8=fr  9=es  o=other code%s\n\n' "$UI_BLD" "$UI_R"
+    printf '   %s1)%s us     %s·%s US English (xkb: us)\n' "$UI_CYN" "$UI_R" "$UI_DIM" "$UI_R"
+    printf '   %s2)%s se     %s·%s Swedish (xkb: se)\n' "$UI_CYN" "$UI_R" "$UI_DIM" "$UI_R"
+    printf '   %s3)%s gb     %s·%s UK English (xkb: gb; you can also type %suk%s)\n' "$UI_CYN" "$UI_R" "$UI_DIM" "$UI_R" "$UI_BLD" "$UI_R"
+    printf '   %s4)%s no     %s·%s Norwegian (xkb: no)\n' "$UI_CYN" "$UI_R" "$UI_DIM" "$UI_R"
+    printf '   %s5)%s dk     %s·%s Danish (xkb: dk)\n' "$UI_CYN" "$UI_R" "$UI_DIM" "$UI_R"
+    printf '   %s6)%s fi     %s·%s Finnish (xkb: fi)\n' "$UI_CYN" "$UI_R" "$UI_DIM" "$UI_R"
+    printf '   %s7)%s de     %s·%s German (xkb: de)\n' "$UI_CYN" "$UI_R" "$UI_DIM" "$UI_R"
+    printf '   %s8)%s fr     %s·%s French (xkb: fr)\n' "$UI_CYN" "$UI_R" "$UI_DIM" "$UI_R"
+    printf '   %s9)%s es     %s·%s Spanish (xkb: es)\n' "$UI_CYN" "$UI_R" "$UI_DIM" "$UI_R"
+    printf '   %so)%s        %s·%s Other — then type xkb code (e.g. pl, nl, ru, ch)\n\n' "$UI_YLW" "$UI_R" "$UI_DIM" "$UI_R"
+    read -r -p "$(printf '%s▶%s Type 1–9, o, or Enter for us (layout %sus%s) [us]: ' "$UI_CYN" "$UI_R" "$UI_BLD" "$UI_R")" choice || true
     choice="${choice//[[:space:]]/}"
     choice="${choice,,}"
     case "${choice:-us}" in
@@ -292,7 +293,7 @@ prompt_keyboard_layout() {
           echo "$(apply_keyboard_layout_aliases "$choice")"
           return 0
         fi
-        ui_warn "invalid choice — enter 1–9, o, or a valid xkb code"
+        ui_warn "invalid choice — use 1=us … 9=es, o=other, or a valid xkb code (see map above)"
         ;;
     esac
   done
@@ -378,16 +379,19 @@ prompt_compositor_install() {
     printf '\n%s▶ %sCompositor%s\n' "$UI_MAG" "$UI_BLD" "$UI_R"
     printf '%s%s%s\n' "$UI_DIM" "$(printf '─%.0s' {1..58})" "$UI_R"
     printf '%s No %ssway%s or %shyprland%s package is installed yet.%s\n' "$UI_DIM" "$UI_BLD" "$UI_DIM" "$UI_BLD" "$UI_DIM" "$UI_R"
-    printf '%s Pick one to install with dnf:%s\n\n' "$UI_R" "$UI_R"
-    printf '   %s1)%s sway       %s·%s i3-like tiling; this repo’s keybinds & theme target Sway\n' "$UI_CYN" "$UI_R" "$UI_DIM" "$UI_R"
-    printf '   %s2)%s hyprland   %s·%s Hyprland + xdg-desktop-portal-hyprland\n' "$UI_CYN" "$UI_R" "$UI_DIM" "$UI_R"
-    read -r -p "$(printf '%s▶%s Enter 1 or 2 [1]: ' "$UI_CYN" "$UI_R")" choice || true
+    printf '%s Pick one number — that session will be installed with dnf:%s\n' "$UI_R" "$UI_R"
+    printf '%s   %s1 = sway%s      %s·%s i3-like tiling; this repo’s keybinds & theme target Sway\n' "$UI_BLD" "$UI_CYN" "$UI_R" "$UI_DIM" "$UI_R"
+    printf '%s   %s2 = hyprland%s  %s·%s Hyprland + xdg-desktop-portal-hyprland\n\n' "$UI_BLD" "$UI_CYN" "$UI_R" "$UI_DIM" "$UI_R"
+    printf '   %s1)%s sway\n' "$UI_CYN" "$UI_R"
+    printf '   %s2)%s hyprland\n' "$UI_CYN" "$UI_R"
+    read -r -p "$(printf '%s▶%s Type %s1%s for sway or %s2%s for hyprland [1]: ' "$UI_CYN" "$UI_R" "$UI_BLD" "$UI_R" "$UI_BLD" "$UI_R")" choice || true
     choice="${choice//[[:space:]]/}"
+    choice="${choice,,}"
     case "${choice:-1}" in
       1|sway) echo sway; return 0 ;;
       2|hyprland|hypr) echo hyprland; return 0 ;;
     esac
-    ui_warn "invalid choice — enter 1 (sway) or 2 (hyprland)"
+    ui_warn "invalid choice — type 1 for sway or 2 for hyprland (see map above)"
   done
 }
 
@@ -508,28 +512,44 @@ build_system_pkgs_array() {
   fi
 }
 
+verify_chosen_compositor_installed() {
+  [[ "$INSTALL_PKGS" -eq 0 ]] && return 0
+  [[ "$DRY_RUN" -eq 1 ]] && return 0
+  command -v rpm >/dev/null 2>&1 || return 0
+  if [[ "$DO_DNF_SWAY" -eq 1 ]] && ! rpm_have sway; then
+    ui_err "sway did not install — check dnf errors above, then: sudo dnf install sway"
+    exit 1
+  fi
+  if [[ "$DO_DNF_HYPR" -eq 1 ]] && ! rpm_have hyprland; then
+    ui_err "hyprland did not install — check dnf errors above, then: sudo dnf install hyprland (needs Fedora updates repo)"
+    exit 1
+  fi
+}
+
 prompt_display_manager() {
   local choice=""
   while true; do
     printf '\n%s▶ %sDisplay manager%s\n' "$UI_MAG" "$UI_BLD" "$UI_R"
     printf '%s%s%s\n' "$UI_DIM" "$(printf '─%.0s' {1..58})" "$UI_R"
-    printf '%s No package found for sddm, lightdm, gdm, or ly.%s\n' "$UI_DIM" "$UI_R"
-    printf '%s Pick one to install and enable for graphical login:%s\n\n' "$UI_R" "$UI_R"
+    printf '%s No sddm, lightdm, gdm, or ly package is installed yet.%s\n' "$UI_DIM" "$UI_R"
+    printf '%s Pick one number to install and enable for graphical login (q = skip):%s\n' "$UI_R" "$UI_R"
+    printf '%s   %s1=sddm  2=lightdm  3=gdm  4=ly  q=skip%s\n\n' "$UI_BLD" "$UI_CYN" "$UI_R"
     printf '   %s1)%s sddm      %s·%s Wayland / Plasma-style setups\n' "$UI_CYN" "$UI_R" "$UI_DIM" "$UI_R"
     printf '   %s2)%s lightdm   %s·%s GTK greeter, lightweight\n' "$UI_CYN" "$UI_R" "$UI_DIM" "$UI_R"
     printf '   %s3)%s gdm       %s·%s GNOME display manager\n' "$UI_CYN" "$UI_R" "$UI_DIM" "$UI_R"
-    printf '   %s4)%s ly        %s·%s TUI (may be missing from Fedora repos)\n' "$UI_CYN" "$UI_R" "$UI_DIM" "$UI_R"
+    printf '   %s4)%s ly        %s·%s TUI greeter (Fedora: enables fnux/ly COPR if needed)\n' "$UI_CYN" "$UI_R" "$UI_DIM" "$UI_R"
     printf '   %sq)%s skip      %s·%s do not install now\n\n' "$UI_YLW" "$UI_R" "$UI_DIM" "$UI_R"
-    read -r -p "$(printf '%s▶%s Enter 1–4 or q [q]: ' "$UI_CYN" "$UI_R")" choice || true
+    read -r -p "$(printf '%s▶%s Type 1–4 (see map) or q to skip [q]: ' "$UI_CYN" "$UI_R")" choice || true
     choice="${choice//[[:space:]]/}"
+    choice="${choice,,}"
     case "$choice" in
       1|sddm) echo sddm; return 0 ;;
       2|lightdm) echo lightdm; return 0 ;;
       3|gdm) echo gdm; return 0 ;;
       4|ly) echo ly; return 0 ;;
-      ""|q|Q|skip) return 1 ;;
+      ""|q|skip) return 1 ;;
     esac
-    ui_warn "invalid choice — enter 1–4 or q"
+    ui_warn "invalid choice — type 1=sddm, 2=lightdm, 3=gdm, 4=ly, or q (see map above)"
   done
 }
 
@@ -600,6 +620,16 @@ enable_chosen_display_manager() {
   ui_ok "enabled $svc (reboot or start the service for graphical login)"
 }
 
+ly_postinstall_fix_tty() {
+  [[ "$CHOSEN_DM" != "ly" ]] && return 0
+  [[ "$DRY_RUN" -eq 1 ]] && return 0
+  # Ly uses tty2 by default; agetty on tty2 prevents the greeter from showing.
+  if systemctl list-unit-files 'getty@tty2.service' &>/dev/null; then
+    run sudo systemctl disable getty@tty2.service 2>/dev/null || true
+    ui_ok "Ly: stopped competing login on tty2 (getty@tty2 disabled — reboot to use Ly)"
+  fi
+}
+
 install_chosen_display_manager() {
   [[ -z "$CHOSEN_DM" ]] && return 0
   [[ "$INSTALL_PKGS" -eq 0 ]] && return 0
@@ -611,13 +641,30 @@ install_chosen_display_manager() {
   [[ ${#pkgs[@]} -eq 0 ]] && return 1
   if [[ "$DRY_RUN" -eq 1 ]]; then
     printf '%s[dry-run]%s would: sudo dnf install -y %s\n' "$UI_YLW" "$UI_R" "${pkgs[*]}"
+    if [[ "$CHOSEN_DM" == "ly" ]]; then
+      printf '%s[dry-run]%s would enable COPR fnux/ly if ly is missing from repos, then retry install\n' "$UI_YLW" "$UI_R"
+      printf '%s[dry-run]%s would: sudo systemctl disable getty@tty2.service (Ly needs tty2)\n' "$UI_YLW" "$UI_R"
+    fi
     enable_chosen_display_manager
     return 0
   fi
   ui_section "Display manager"
   printf '%s · %sInstalling %s%s…%s\n' "$UI_CYN" "$UI_R" "$UI_BLD" "$CHOSEN_DM" "$UI_R"
-  run sudo dnf install -y "${pkgs[@]}"
+  if [[ "$CHOSEN_DM" == "ly" ]]; then
+    if ! run sudo dnf install -y "${pkgs[@]}"; then
+      ui_warn "Ly is not in Fedora default repos — enabling COPR fnux/ly, then installing again"
+      run sudo dnf copr enable -y fnux/ly
+      run sudo dnf install -y "${pkgs[@]}"
+    fi
+    if ! rpm_have ly; then
+      ui_err "Ly still not installed — see dnf output above (COPR: fnux/ly)"
+      exit 1
+    fi
+  else
+    run sudo dnf install -y "${pkgs[@]}"
+  fi
   enable_chosen_display_manager
+  ly_postinstall_fix_tty
 }
 
 ensure_pavucontrol() {
@@ -678,7 +725,8 @@ build_system_pkgs_array
 if [[ "$INSTALL_PKGS" -eq 1 && "$DRY_RUN" -eq 0 ]] && command -v dnf >/dev/null 2>&1; then
   ui_section "System packages"
   printf '%s · %sInstalling dependencies with dnf (use --no-packages to skip)…%s\n' "$UI_CYN" "$UI_DIM" "$UI_R"
-  run sudo dnf install -y "${SYSTEM_PKGS[@]}" || true
+  run sudo dnf install -y "${SYSTEM_PKGS[@]}"
+  verify_chosen_compositor_installed
   if [[ "$CHOSEN_SESSION" == "sway" ]] || rpm_have sway; then
     printf '\n%s · optional: pip install --user autotiling · wallpaper picker deps are covered by dnf above%s\n' "$UI_DIM" "$UI_R"
   fi
