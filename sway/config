@@ -64,23 +64,15 @@ output HDMI-A-1 mode 1920x1080@60.000Hz position 2560 0
 
 ### Input configuration
 #
-# Swedish keyboard (standard Swedish layout, åäö on dedicated keys).
-input type:keyboard {
-    xkb_layout se
-    xkb_model pc105
-}
-#
-# Example configuration:
-#
+# Keyboard layout: ~/.config/sway/config.d/10-xkb-layout.conf (set by install.sh).
+# Touchpad example:
 #   input "2:14:SynPS/2_Synaptics_TouchPad" {
 #       dwt enabled
 #       tap enabled
 #       natural_scroll enabled
 #       middle_emulation enabled
 #   }
-#
-# You can get the names of your inputs by running: swaymsg -t get_inputs
-# Read `man 5 sway-input` for more information about this section.
+# List inputs: swaymsg -t get_inputs  ·  man 5 sway-input
 
 ### Appearance
 # Tiled windows: border only, no title bar (Sway decoration)
@@ -261,8 +253,10 @@ bindsym $mod+r mode "resize"
 # (/etc) or per-user ($XDG_CONFIG_HOME) basis. Just create the file you
 # want to modify/override in the higher-level directory.
 #
-# For example, to disable the default bar from Fedora configs, you'll need to
-#     $ echo -n > "$HOME/.config/sway/config.d/90-bar.conf"
+# To disable a distro bar snippet (if one exists) in favour of your own, you can
+# override with an empty file, e.g.:
+#     $ : > "$HOME/.config/sway/config.d/90-bar.conf"
+# Waybar for these dotfiles is started explicitly in config.d/20-waybar.conf.
 #
 # Note the quoting, the $() and the arguments quoting. All the parts are equally
 # important to make the magic work. And if you want to learn the secret behind

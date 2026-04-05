@@ -21,6 +21,9 @@ fi
 if [[ -d "$SRC/fuzzel" ]]; then
   rsync -a --delete "$SRC/fuzzel/" "$SCRIPT_DIR/fuzzel/"
 fi
+if [[ -d "$SRC/hypr" ]]; then
+  rsync -a --delete "$SRC/hypr/" "$SCRIPT_DIR/hypr/"
+fi
 
 echo "Packed from $SRC into $SCRIPT_DIR"
 echo "Next: tar czf sway-dotfiles.tar.gz -C $(dirname "$SCRIPT_DIR") $(basename "$SCRIPT_DIR")"

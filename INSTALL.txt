@@ -1,11 +1,12 @@
-Sway dotfiles bundle
-====================
+Wayland dotfiles bundle (Sway / Hyprland)
+=========================================
 
 Keep this folder anywhere you like (e.g. ~/Documents/sway-dotfiles). Scripts use paths
 under ~/.config only when installing or packing from your live session.
 
 Contents:
   sway/      — main config, Catppuccin window colours, wallpaper scripts + picker, screenshots
+  hypr/      — Hyprland starter (Waybar exec-once); copied only when Hyprland is installed/selected
   waybar/    — Catppuccin bar, power button → wlogout
   wlogout/   — layout + style (icons from system wlogout package)
 
@@ -15,7 +16,8 @@ Quick install (Fedora):
   ./install.sh
 
 The installer copies into ~/.config/, backs up any existing sway/waybar/wlogout folders,
-and runs dnf to install dependencies (unless you pass --no-packages).
+and runs dnf to install dependencies (unless you pass --no-packages). If neither Sway nor
+Hyprland is installed, it asks which compositor to install (or use --compositor sway|hyprland).
 
 Update the bundle from your current machine before sharing:
   ./pack.sh
