@@ -490,7 +490,7 @@ build_system_pkgs_array() {
     swaybg
     xdg-desktop-portal-wlr
     xdg-desktop-portal-gtk
-    polkit-gnome
+    mate-polkit
     qt6-qtwayland
     wireplumber
     sway-systemd
@@ -506,7 +506,7 @@ build_system_pkgs_array() {
     hyprland
     xdg-desktop-portal-hyprland
     xdg-desktop-portal-gtk
-    polkit-gnome
+    mate-polkit
     qt6-qtwayland
     wireplumber
   )
