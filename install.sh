@@ -261,45 +261,48 @@ validate_xkb_layout_string() {
 prompt_keyboard_layout() {
   local choice="" custom=""
   while true; do
-    printf '\n%s▶ %sStep 3/5 — Keyboard layout (XKB)%s\n' "$UI_MAG" "$UI_BLD" "$UI_R"
-    printf '%s%s%s\n' "$UI_DIM" "$(printf '─%.0s' {1..58})" "$UI_R"
-    printf '%s Each number sets the same layout code for Sway and Hyprland:%s\n' "$UI_R" "$UI_R"
-    printf '%s   %s1=us  2=se  3=gb(UK)  4=no  5=dk  6=fi  7=de  8=fr  9=es  o=other code%s\n\n' "$UI_BLD" "$UI_R"
-    printf '   %s1)%s us     %s·%s US English (xkb: us)\n' "$UI_CYN" "$UI_R" "$UI_DIM" "$UI_R"
-    printf '   %s2)%s se     %s·%s Swedish (xkb: se)\n' "$UI_CYN" "$UI_R" "$UI_DIM" "$UI_R"
-    printf '   %s3)%s gb     %s·%s UK English (xkb: gb; you can also type %suk%s)\n' "$UI_CYN" "$UI_R" "$UI_DIM" "$UI_R" "$UI_BLD" "$UI_R"
-    printf '   %s4)%s no     %s·%s Norwegian (xkb: no)\n' "$UI_CYN" "$UI_R" "$UI_DIM" "$UI_R"
-    printf '   %s5)%s dk     %s·%s Danish (xkb: dk)\n' "$UI_CYN" "$UI_R" "$UI_DIM" "$UI_R"
-    printf '   %s6)%s fi     %s·%s Finnish (xkb: fi)\n' "$UI_CYN" "$UI_R" "$UI_DIM" "$UI_R"
-    printf '   %s7)%s de     %s·%s German (xkb: de)\n' "$UI_CYN" "$UI_R" "$UI_DIM" "$UI_R"
-    printf '   %s8)%s fr     %s·%s French (xkb: fr)\n' "$UI_CYN" "$UI_R" "$UI_DIM" "$UI_R"
-    printf '   %s9)%s es     %s·%s Spanish (xkb: es)\n' "$UI_CYN" "$UI_R" "$UI_DIM" "$UI_R"
-    printf '   %so)%s        %s·%s Other — then type xkb code (e.g. pl, nl, ru, ch)\n\n' "$UI_YLW" "$UI_R" "$UI_DIM" "$UI_R"
+    # All UI on stderr so stdout stays a single line for KEYBOARD_LAYOUT_RESOLVED="$(…)"
+    {
+      printf '\n%s▶ %sStep 3/5 — Keyboard layout (XKB)%s\n' "$UI_MAG" "$UI_BLD" "$UI_R"
+      printf '%s%s%s\n' "$UI_DIM" "$(printf '─%.0s' {1..58})" "$UI_R"
+      printf '%s Each number sets the same layout code for Sway and Hyprland:%s\n' "$UI_R" "$UI_R"
+      printf '%s   %s1=us  2=se  3=gb(UK)  4=no  5=dk  6=fi  7=de  8=fr  9=es  o=other code%s\n\n' "$UI_BLD" "$UI_R"
+      printf '   %s1)%s us     %s·%s US English (xkb: us)\n' "$UI_CYN" "$UI_R" "$UI_DIM" "$UI_R"
+      printf '   %s2)%s se     %s·%s Swedish (xkb: se)\n' "$UI_CYN" "$UI_R" "$UI_DIM" "$UI_R"
+      printf '   %s3)%s gb     %s·%s UK English (xkb: gb; you can also type %suk%s)\n' "$UI_CYN" "$UI_R" "$UI_DIM" "$UI_R" "$UI_BLD" "$UI_R"
+      printf '   %s4)%s no     %s·%s Norwegian (xkb: no)\n' "$UI_CYN" "$UI_R" "$UI_DIM" "$UI_R"
+      printf '   %s5)%s dk     %s·%s Danish (xkb: dk)\n' "$UI_CYN" "$UI_R" "$UI_DIM" "$UI_R"
+      printf '   %s6)%s fi     %s·%s Finnish (xkb: fi)\n' "$UI_CYN" "$UI_R" "$UI_DIM" "$UI_R"
+      printf '   %s7)%s de     %s·%s German (xkb: de)\n' "$UI_CYN" "$UI_R" "$UI_DIM" "$UI_R"
+      printf '   %s8)%s fr     %s·%s French (xkb: fr)\n' "$UI_CYN" "$UI_R" "$UI_DIM" "$UI_R"
+      printf '   %s9)%s es     %s·%s Spanish (xkb: es)\n' "$UI_CYN" "$UI_R" "$UI_DIM" "$UI_R"
+      printf '   %so)%s        %s·%s Other — then type xkb code (e.g. pl, nl, ru, ch)\n\n' "$UI_YLW" "$UI_R" "$UI_DIM" "$UI_R"
+    } >&2
     read -r -p "$(printf '%s▶%s Type 1–9, o, or Enter for us (layout %sus%s) [us]: ' "$UI_CYN" "$UI_R" "$UI_BLD" "$UI_R")" choice || true
     choice="${choice//[[:space:]]/}"
     choice="${choice,,}"
     case "${choice:-us}" in
-      ""|1|us) echo us; return 0 ;;
-      2|se) echo se; return 0 ;;
-      3|gb|uk) echo gb; return 0 ;;
-      4|no) echo no; return 0 ;;
-      5|dk) echo dk; return 0 ;;
-      6|fi) echo fi; return 0 ;;
-      7|de) echo de; return 0 ;;
-      8|fr) echo fr; return 0 ;;
-      9|es) echo es; return 0 ;;
+      ""|1|us) printf '%s\n' us; return 0 ;;
+      2|se) printf '%s\n' se; return 0 ;;
+      3|gb|uk) printf '%s\n' gb; return 0 ;;
+      4|no) printf '%s\n' no; return 0 ;;
+      5|dk) printf '%s\n' dk; return 0 ;;
+      6|fi) printf '%s\n' fi; return 0 ;;
+      7|de) printf '%s\n' de; return 0 ;;
+      8|fr) printf '%s\n' fr; return 0 ;;
+      9|es) printf '%s\n' es; return 0 ;;
       o|other)
         read -r -p "$(printf '%s▶%s XKB layout code: ' "$UI_CYN" "$UI_R")" custom || true
         custom="$(apply_keyboard_layout_aliases "$custom")"
         if validate_xkb_layout_string "$custom"; then
-          echo "$custom"
+          printf '%s\n' "$custom"
           return 0
         fi
         ui_warn "invalid layout — use letters, digits, commas, hyphen (e.g. us,latam)"
         ;;
       *)
         if validate_xkb_layout_string "$choice"; then
-          echo "$(apply_keyboard_layout_aliases "$choice")"
+          printf '%s\n' "$(apply_keyboard_layout_aliases "$choice")"
           return 0
         fi
         ui_warn "invalid choice — use 1=us … 9=es, o=other, or a valid xkb code (see map above)"
@@ -384,19 +387,21 @@ normalize_compositor_id() {
 prompt_desktop_choice() {
   local choice=""
   while true; do
-    printf '\n%s▶ %sStep 1/5 — Desktop session%s\n' "$UI_MAG" "$UI_BLD" "$UI_R"
-    printf '%s%s%s\n' "$UI_DIM" "$(printf '─%.0s' {1..58})" "$UI_R"
-    printf '%s Choose Hyprland or Sway (dotfiles and packages follow this choice):%s\n' "$UI_R" "$UI_R"
-    printf '%s   %s1 = hyprland%s  %s·%s dynamic tiling; copies %shypr/%s and Hyprland session packages\n' "$UI_BLD" "$UI_CYN" "$UI_R" "$UI_DIM" "$UI_R" "$UI_BLD" "$UI_R"
-    printf '%s   %s2 = sway%s       %s·%s i3-like tiling; this repo’s keybinds & theme target Sway\n\n' "$UI_BLD" "$UI_CYN" "$UI_R" "$UI_DIM" "$UI_R"
-    printf '   %s1)%s hyprland\n' "$UI_CYN" "$UI_R"
-    printf '   %s2)%s sway\n' "$UI_CYN" "$UI_R"
+    {
+      printf '\n%s▶ %sStep 1/5 — Desktop session%s\n' "$UI_MAG" "$UI_BLD" "$UI_R"
+      printf '%s%s%s\n' "$UI_DIM" "$(printf '─%.0s' {1..58})" "$UI_R"
+      printf '%s Choose Hyprland or Sway (dotfiles and packages follow this choice):%s\n' "$UI_R" "$UI_R"
+      printf '%s   %s1 = hyprland%s  %s·%s dynamic tiling; copies %shypr/%s and Hyprland session packages\n' "$UI_BLD" "$UI_CYN" "$UI_R" "$UI_DIM" "$UI_R" "$UI_BLD" "$UI_R"
+      printf '%s   %s2 = sway%s       %s·%s i3-like tiling; this repo’s keybinds & theme target Sway\n\n' "$UI_BLD" "$UI_CYN" "$UI_R" "$UI_DIM" "$UI_R"
+      printf '   %s1)%s hyprland\n' "$UI_CYN" "$UI_R"
+      printf '   %s2)%s sway\n' "$UI_CYN" "$UI_R"
+    } >&2
     read -r -p "$(printf '%s▶%s Type %s1%s for hyprland or %s2%s for sway [2]: ' "$UI_CYN" "$UI_R" "$UI_BLD" "$UI_R" "$UI_BLD" "$UI_R")" choice || true
     choice="${choice//[[:space:]]/}"
     choice="${choice,,}"
     case "${choice:-2}" in
-      1|hyprland|hypr) echo hyprland; return 0 ;;
-      2|sway) echo sway; return 0 ;;
+      1|hyprland|hypr) printf '%s\n' hyprland; return 0 ;;
+      2|sway) printf '%s\n' sway; return 0 ;;
     esac
     ui_warn "invalid choice — type 1 for hyprland or 2 for sway (see map above)"
   done
@@ -592,31 +597,33 @@ dnf_install_system_packages() {
 prompt_display_manager() {
   local choice=""
   while true; do
-    printf '\n%s▶ %sStep 2/5 — Login manager (graphical greeter)%s\n' "$UI_MAG" "$UI_BLD" "$UI_R"
-    printf '%s%s%s\n' "$UI_DIM" "$(printf '─%.0s' {1..58})" "$UI_R"
-    printf '%s Pick which display manager should be installed (if needed) and set as the active default.%s\n' "$UI_R" "$UI_R"
-    if any_display_manager_pkg; then
-      printf '%s Installed now: %s%s%s\n' "$UI_DIM" "$UI_BLD" "$(list_installed_display_managers)" "$UI_R"
-    else
-      printf '%s No sddm / ly / lightdm / gdm detected — one will be installed with dnf.%s\n' "$UI_DIM" "$UI_R"
-    fi
-    printf '%s   %s1=sddm  2=ly  3=lightdm  4=gdm  q=skip%s\n\n' "$UI_BLD" "$UI_CYN" "$UI_R"
-    printf '   %s1)%s sddm      %s·%s Wayland / Plasma-style setups\n' "$UI_CYN" "$UI_R" "$UI_DIM" "$UI_R"
-    printf '   %s2)%s ly        %s·%s TUI greeter (Fedora: enables fnux/ly COPR if needed)\n' "$UI_CYN" "$UI_R" "$UI_DIM" "$UI_R"
-    printf '   %s3)%s lightdm   %s·%s GTK greeter, lightweight\n' "$UI_CYN" "$UI_R" "$UI_DIM" "$UI_R"
-    printf '   %s4)%s gdm       %s·%s GNOME display manager\n' "$UI_CYN" "$UI_R" "$UI_DIM" "$UI_R"
-    printf '   %sq)%s skip      %s·%s do not change / install a display manager now\n\n' "$UI_YLW" "$UI_R" "$UI_DIM" "$UI_R"
-    read -r -p "$(printf '%s▶%s Type 1–4 (see map) or q to skip [q]: ' "$UI_CYN" "$UI_R")" choice || true
+    {
+      printf '\n%s▶ %sStep 2/5 — Login manager (graphical greeter)%s\n' "$UI_MAG" "$UI_BLD" "$UI_R"
+      printf '%s%s%s\n' "$UI_DIM" "$(printf '─%.0s' {1..58})" "$UI_R"
+      printf '%s Pick which display manager should be installed (if needed) and set as the active default.%s\n' "$UI_R" "$UI_R"
+      if any_display_manager_pkg; then
+        printf '%s Installed now: %s%s%s\n' "$UI_DIM" "$UI_BLD" "$(list_installed_display_managers)" "$UI_R"
+      else
+        printf '%s No sddm / ly / lightdm / gdm detected — one will be installed with dnf.%s\n' "$UI_DIM" "$UI_R"
+      fi
+      printf '%s   %s1=sddm  2=ly  3=lightdm  4=gdm  q=skip%s\n\n' "$UI_BLD" "$UI_CYN" "$UI_R"
+      printf '   %s1)%s sddm      %s·%s Wayland / Plasma-style setups\n' "$UI_CYN" "$UI_R" "$UI_DIM" "$UI_R"
+      printf '   %s2)%s ly        %s·%s TUI greeter (Fedora: enables fnux/ly COPR if needed)\n' "$UI_CYN" "$UI_R" "$UI_DIM" "$UI_R"
+      printf '   %s3)%s lightdm   %s·%s GTK greeter, lightweight\n' "$UI_CYN" "$UI_R" "$UI_DIM" "$UI_R"
+      printf '   %s4)%s gdm       %s·%s GNOME display manager\n' "$UI_CYN" "$UI_R" "$UI_DIM" "$UI_R"
+      printf '   %sq)%s skip      %s·%s do not change / install a display manager now\n\n' "$UI_YLW" "$UI_R" "$UI_DIM" "$UI_R"
+    } >&2
+    read -r -p "$(printf '%s▶%s Type 1–4 (see map above), Enter for SDDM, or q to skip [1]: ' "$UI_CYN" "$UI_R")" choice || true
     choice="${choice//[[:space:]]/}"
     choice="${choice,,}"
-    case "$choice" in
-      1|sddm) echo sddm; return 0 ;;
-      2|ly) echo ly; return 0 ;;
-      3|lightdm) echo lightdm; return 0 ;;
-      4|gdm) echo gdm; return 0 ;;
-      ""|q|skip) return 1 ;;
+    case "${choice:-1}" in
+      q|skip) return 1 ;;
+      1|sddm) printf '%s\n' sddm; return 0 ;;
+      2|ly) printf '%s\n' ly; return 0 ;;
+      3|lightdm) printf '%s\n' lightdm; return 0 ;;
+      4|gdm) printf '%s\n' gdm; return 0 ;;
     esac
-    ui_warn "invalid choice — type 1=sddm, 2=ly, 3=lightdm, 4=gdm, or q (see map above)"
+    ui_warn "invalid choice — type 1=sddm, 2=ly, 3=lightdm, 4=gdm, Enter=SDDM, or q (see map above)"
   done
 }
 
@@ -796,6 +803,12 @@ choose_compositor_if_needed
 choose_display_manager_if_needed
 
 KEYBOARD_LAYOUT_RESOLVED="$(resolve_keyboard_layout)"
+# One-line token only (wizard UI must go to stderr, not stdout)
+KEYBOARD_LAYOUT_RESOLVED="$(printf '%s' "$KEYBOARD_LAYOUT_RESOLVED" | tr -d '\r\n' | sed -n '1p')"
+if ! validate_xkb_layout_string "$KEYBOARD_LAYOUT_RESOLVED"; then
+  ui_err "invalid keyboard layout after resolve — use --keyboard-layout CODE"
+  exit 1
+fi
 WALLPAPER_DIR_RESOLVED="$(resolve_wallpaper_dir)"
 
 ui_section "Paths"
@@ -867,8 +880,22 @@ write_keyboard_layout_configs() {
   ui_ok "keyboard layout → $layout ($sway_f)"
   if [[ -f "$hypr_f" ]]; then
     if grep -qE '^[[:space:]]*kb_layout[[:space:]]*=' "$hypr_f"; then
-      sed -i "s#^[[:space:]]*kb_layout[[:space:]]*=.*#    kb_layout = $layout#" "$hypr_f"
-      ui_ok "keyboard layout → $layout ($hypr_f)"
+      local tmp
+      tmp="$(mktemp "${TMPDIR:-/tmp}/swaydots-hyprkbd.XXXXXX")"
+      if awk -v l="$layout" '
+        /^[[:space:]]*kb_layout[[:space:]]*=/ {
+          print "    kb_layout = " l
+          next
+        }
+        { print }
+      ' "$hypr_f" >"$tmp"; then
+        mv -f "$tmp" "$hypr_f"
+        ui_ok "keyboard layout → $layout ($hypr_f)"
+      else
+        rm -f "$tmp"
+        ui_err "failed to patch kb_layout in $hypr_f"
+        exit 1
+      fi
     else
       ui_warn "no kb_layout line in $hypr_f — add: input { kb_layout = $layout }"
     fi
