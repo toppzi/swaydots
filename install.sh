@@ -50,8 +50,11 @@ Usage: install.sh [options]
   writes WALLPAPER_DIR for wallpaper scripts (systemd user environment.d),
   sets executable bits on scripts, and optionally installs Fedora packages.
 
-  If neither Sway nor Hyprland is installed, you are prompted to install one (or pass
-  --compositor). Shared stack: waybar, wlogout, kitty, fuzzel, grim, slurp, etc.
+  Interactive install (TTY): Step 1 desktop (Hyprland or Sway), Step 2 login manager
+  (SDDM, Ly, LightDM, or GDM — chosen unit is enabled as default), Step 3 keyboard (XKB),
+  then dependencies/dotfiles, Step 5 LGL system loadout. Non-interactive: use the flags below.
+
+  Shared stack: waybar, wlogout, kitty, fuzzel, grim, slurp, etc.
 
 Options:
   --dry-run          Print actions only; do not copy files or write env.
@@ -59,12 +62,12 @@ Options:
   --wallpaper-dir PATH
                      Set wallpaper folder (non-interactive). Expands ~.
   --display-manager NAME
-                     When no display manager is installed: install NAME (sddm, lightdm,
-                     gdm, or ly). Non-interactive; use with dnf-based installs.
+                     Set login manager to NAME (sddm, ly, lightdm, gdm). Non-interactive;
+                     installs if needed with dnf.
   --skip-display-manager
                      Do not check, prompt, or install a display manager.
-  --compositor NAME  When neither sway nor hyprland is installed: install NAME (sway or
-                     hyprland). Non-interactive; requires dnf-based installs.
+  --compositor NAME  Desktop session (sway or hyprland). Non-interactive; installs missing
+                     compositor with dnf when combined with package install.
   --keyboard-layout CODE
                      XKB layout for Sway and Hyprland (e.g. us, se, gb, no, de). Use gb for
                      UK English. Non-interactive; default us if omitted in CI.
@@ -98,7 +101,7 @@ while [[ $# -gt 0 ]]; do
       ;;
     --display-manager)
       if [[ -z "${2:-}" ]]; then
-        ui_err "missing name for --display-manager (sddm, lightdm, gdm, ly)"
+        ui_err "missing name for --display-manager (sddm, ly, lightdm, gdm)"
         exit 1
       fi
       DISPLAY_MANAGER_CLI="${2,,}"
@@ -258,7 +261,7 @@ validate_xkb_layout_string() {
 prompt_keyboard_layout() {
   local choice="" custom=""
   while true; do
-    printf '\n%s▶ %sKeyboard layout (XKB)%s\n' "$UI_MAG" "$UI_BLD" "$UI_R"
+    printf '\n%s▶ %sStep 3/5 — Keyboard layout (XKB)%s\n' "$UI_MAG" "$UI_BLD" "$UI_R"
     printf '%s%s%s\n' "$UI_DIM" "$(printf '─%.0s' {1..58})" "$UI_R"
     printf '%s Each number sets the same layout code for Sway and Hyprland:%s\n' "$UI_R" "$UI_R"
     printf '%s   %s1=us  2=se  3=gb(UK)  4=no  5=dk  6=fi  7=de  8=fr  9=es  o=other code%s\n\n' "$UI_BLD" "$UI_R"
@@ -326,8 +329,6 @@ resolve_keyboard_layout() {
 }
 
 ui_banner
-WALLPAPER_DIR_RESOLVED="$(resolve_wallpaper_dir)"
-KEYBOARD_LAYOUT_RESOLVED="$(resolve_keyboard_layout)"
 
 run() {
   if [[ "$DRY_RUN" -eq 1 ]]; then
@@ -379,25 +380,25 @@ normalize_compositor_id() {
   esac
 }
 
-prompt_compositor_install() {
+# Step 1/5 — Desktop session (order: 1 Hyprland, 2 Sway)
+prompt_desktop_choice() {
   local choice=""
   while true; do
-    printf '\n%s▶ %sCompositor%s\n' "$UI_MAG" "$UI_BLD" "$UI_R"
+    printf '\n%s▶ %sStep 1/5 — Desktop session%s\n' "$UI_MAG" "$UI_BLD" "$UI_R"
     printf '%s%s%s\n' "$UI_DIM" "$(printf '─%.0s' {1..58})" "$UI_R"
-    printf '%s No %ssway%s or %shyprland%s package is installed yet.%s\n' "$UI_DIM" "$UI_BLD" "$UI_DIM" "$UI_BLD" "$UI_DIM" "$UI_R"
-    printf '%s Pick one number — that session will be installed with dnf:%s\n' "$UI_R" "$UI_R"
-    printf '%s   %s1 = sway%s      %s·%s i3-like tiling; this repo’s keybinds & theme target Sway\n' "$UI_BLD" "$UI_CYN" "$UI_R" "$UI_DIM" "$UI_R"
-    printf '%s   %s2 = hyprland%s  %s·%s Hyprland + xdg-desktop-portal-hyprland\n\n' "$UI_BLD" "$UI_CYN" "$UI_R" "$UI_DIM" "$UI_R"
-    printf '   %s1)%s sway\n' "$UI_CYN" "$UI_R"
-    printf '   %s2)%s hyprland\n' "$UI_CYN" "$UI_R"
-    read -r -p "$(printf '%s▶%s Type %s1%s for sway or %s2%s for hyprland [1]: ' "$UI_CYN" "$UI_R" "$UI_BLD" "$UI_R" "$UI_BLD" "$UI_R")" choice || true
+    printf '%s Choose Hyprland or Sway (dotfiles and packages follow this choice):%s\n' "$UI_R" "$UI_R"
+    printf '%s   %s1 = hyprland%s  %s·%s dynamic tiling; copies %shypr/%s and Hyprland session packages\n' "$UI_BLD" "$UI_CYN" "$UI_R" "$UI_DIM" "$UI_R" "$UI_BLD" "$UI_R"
+    printf '%s   %s2 = sway%s       %s·%s i3-like tiling; this repo’s keybinds & theme target Sway\n\n' "$UI_BLD" "$UI_CYN" "$UI_R" "$UI_DIM" "$UI_R"
+    printf '   %s1)%s hyprland\n' "$UI_CYN" "$UI_R"
+    printf '   %s2)%s sway\n' "$UI_CYN" "$UI_R"
+    read -r -p "$(printf '%s▶%s Type %s1%s for hyprland or %s2%s for sway [2]: ' "$UI_CYN" "$UI_R" "$UI_BLD" "$UI_R" "$UI_BLD" "$UI_R")" choice || true
     choice="${choice//[[:space:]]/}"
     choice="${choice,,}"
-    case "${choice:-1}" in
-      1|sway) echo sway; return 0 ;;
-      2|hyprland|hypr) echo hyprland; return 0 ;;
+    case "${choice:-2}" in
+      1|hyprland|hypr) echo hyprland; return 0 ;;
+      2|sway) echo sway; return 0 ;;
     esac
-    ui_warn "invalid choice — type 1 for sway or 2 for hyprland (see map above)"
+    ui_warn "invalid choice — type 1 for hyprland or 2 for sway (see map above)"
   done
 }
 
@@ -410,66 +411,104 @@ choose_compositor_if_needed() {
   if rpm_have sway; then has_s=1; fi
   if rpm_have hyprland; then has_h=1; fi
 
-  if [[ "$has_s" -eq 1 && "$has_h" -eq 1 ]]; then
-    ui_ok "compositor packages: Sway and Hyprland already installed"
-    CHOSEN_SESSION=sway
-    return 0
-  fi
-  if [[ "$has_s" -eq 1 ]]; then
-    ui_ok "Sway package present"
-    CHOSEN_SESSION=sway
-    return 0
-  fi
-  if [[ "$has_h" -eq 1 ]]; then
-    ui_ok "Hyprland package present"
-    CHOSEN_SESSION=hyprland
-    return 0
-  fi
-
-  ui_info "no sway or hyprland package detected"
-  if [[ "$INSTALL_PKGS" -eq 0 ]]; then
-    if [[ -n "$COMPOSITOR_CLI" ]]; then
-      ui_err "--compositor cannot be used with --no-packages"
-      exit 1
-    fi
-    ui_warn "install sway or hyprland yourself, or re-run without --no-packages"
-    return 0
-  fi
+  # Non-interactive: --compositor
   if [[ -n "$COMPOSITOR_CLI" ]]; then
     if ! CHOSEN_SESSION="$(normalize_compositor_id "$COMPOSITOR_CLI")"; then
       ui_err "invalid --compositor (use sway or hyprland)"
       exit 1
     fi
-    if ! command -v dnf >/dev/null 2>&1; then
-      ui_err "--compositor requires dnf (not found in PATH)"
-      exit 1
+    if [[ "$INSTALL_PKGS" -eq 0 ]]; then
+      if [[ "$CHOSEN_SESSION" == "sway" && "$has_s" -eq 0 ]]; then
+        ui_err "sway is not installed; install it first or re-run without --no-packages"
+        exit 1
+      fi
+      if [[ "$CHOSEN_SESSION" == "hyprland" && "$has_h" -eq 0 ]]; then
+        ui_err "hyprland is not installed; install it first or re-run without --no-packages"
+        exit 1
+      fi
     fi
-    if [[ "$CHOSEN_SESSION" == "sway" ]]; then
+    if [[ "$CHOSEN_SESSION" == "sway" && "$has_s" -eq 0 ]]; then
       DO_DNF_SWAY=1
-    else
+    fi
+    if [[ "$CHOSEN_SESSION" == "hyprland" && "$has_h" -eq 0 ]]; then
       DO_DNF_HYPR=1
     fi
-    return 0
-  fi
-  if ! command -v dnf >/dev/null 2>&1; then
-    ui_warn "dnf not found — install sway or hyprland with your package manager"
+    if [[ "$DO_DNF_SWAY" -eq 1 || "$DO_DNF_HYPR" -eq 1 ]] && ! command -v dnf >/dev/null 2>&1; then
+      ui_err "--compositor install path requires dnf (not found in PATH)"
+      exit 1
+    fi
     return 0
   fi
 
-  local pick=""
+  # Dry-run: deterministic defaults, no prompts
   if [[ "$DRY_RUN" -eq 1 ]]; then
-    pick=sway
-  elif [[ -t 0 ]]; then
-    pick="$(prompt_compositor_install)"
-  else
-    ui_warn "non-interactive session — defaulting to sway (pass --compositor hyprland if needed)"
-    pick=sway
+    if [[ "$has_s" -eq 1 && "$has_h" -eq 1 ]]; then
+      CHOSEN_SESSION=sway
+    elif [[ "$has_s" -eq 1 ]]; then
+      CHOSEN_SESSION=sway
+    elif [[ "$has_h" -eq 1 ]]; then
+      CHOSEN_SESSION=hyprland
+    else
+      CHOSEN_SESSION=sway
+      DO_DNF_SWAY=1
+    fi
+    return 0
   fi
+
+  # Non-interactive (no TTY): pick installed session or default sway + install
+  if [[ ! -t 0 ]]; then
+    if [[ "$has_s" -eq 1 && "$has_h" -eq 1 ]]; then
+      CHOSEN_SESSION=sway
+      ui_warn "non-interactive: both Sway and Hyprland installed — using sway (pass --compositor hyprland for Hyprland)"
+      return 0
+    fi
+    if [[ "$has_s" -eq 1 ]]; then
+      CHOSEN_SESSION=sway
+      return 0
+    fi
+    if [[ "$has_h" -eq 1 ]]; then
+      CHOSEN_SESSION=hyprland
+      return 0
+    fi
+    if [[ "$INSTALL_PKGS" -eq 0 ]]; then
+      ui_warn "non-interactive: no compositor installed — install sway or hyprland, or pass --compositor and packages"
+      return 0
+    fi
+    if ! command -v dnf >/dev/null 2>&1; then
+      ui_warn "dnf not found — install sway or hyprland with your package manager"
+      return 0
+    fi
+    ui_warn "non-interactive session — defaulting to sway (pass --compositor hyprland if needed)"
+    CHOSEN_SESSION=sway
+    DO_DNF_SWAY=1
+    return 0
+  fi
+
+  # Interactive: always ask (Step 1/5)
+  local pick=""
+  pick="$(prompt_desktop_choice)"
   CHOSEN_SESSION="$pick"
   if [[ "$pick" == "sway" ]]; then
-    DO_DNF_SWAY=1
+    [[ "$has_s" -eq 0 ]] && DO_DNF_SWAY=1
   else
-    DO_DNF_HYPR=1
+    [[ "$has_h" -eq 0 ]] && DO_DNF_HYPR=1
+  fi
+
+  if [[ "$INSTALL_PKGS" -eq 0 ]]; then
+    if [[ "$pick" == "sway" && "$has_s" -eq 0 ]]; then
+      ui_err "Sway is not installed — re-run without --no-packages or install sway first"
+      exit 1
+    fi
+    if [[ "$pick" == "hyprland" && "$has_h" -eq 0 ]]; then
+      ui_err "Hyprland is not installed — re-run without --no-packages or install hyprland first"
+      exit 1
+    fi
+    return 0
+  fi
+
+  if [[ "$DO_DNF_SWAY" -eq 1 || "$DO_DNF_HYPR" -eq 1 ]] && ! command -v dnf >/dev/null 2>&1; then
+    ui_err "dnf is required to install the selected desktop (not found in PATH)"
+    exit 1
   fi
 }
 
@@ -549,74 +588,84 @@ dnf_install_system_packages() {
   return 1
 }
 
+# Step 2/5 — Login manager (order: 1 SDDM, 2 Ly, 3 LightDM, 4 GDM)
 prompt_display_manager() {
   local choice=""
   while true; do
-    printf '\n%s▶ %sDisplay manager%s\n' "$UI_MAG" "$UI_BLD" "$UI_R"
+    printf '\n%s▶ %sStep 2/5 — Login manager (graphical greeter)%s\n' "$UI_MAG" "$UI_BLD" "$UI_R"
     printf '%s%s%s\n' "$UI_DIM" "$(printf '─%.0s' {1..58})" "$UI_R"
-    printf '%s No sddm, lightdm, gdm, or ly package is installed yet.%s\n' "$UI_DIM" "$UI_R"
-    printf '%s Pick one number to install and enable for graphical login (q = skip):%s\n' "$UI_R" "$UI_R"
-    printf '%s   %s1=sddm  2=lightdm  3=gdm  4=ly  q=skip%s\n\n' "$UI_BLD" "$UI_CYN" "$UI_R"
+    printf '%s Pick which display manager should be installed (if needed) and set as the active default.%s\n' "$UI_R" "$UI_R"
+    if any_display_manager_pkg; then
+      printf '%s Installed now: %s%s%s\n' "$UI_DIM" "$UI_BLD" "$(list_installed_display_managers)" "$UI_R"
+    else
+      printf '%s No sddm / ly / lightdm / gdm detected — one will be installed with dnf.%s\n' "$UI_DIM" "$UI_R"
+    fi
+    printf '%s   %s1=sddm  2=ly  3=lightdm  4=gdm  q=skip%s\n\n' "$UI_BLD" "$UI_CYN" "$UI_R"
     printf '   %s1)%s sddm      %s·%s Wayland / Plasma-style setups\n' "$UI_CYN" "$UI_R" "$UI_DIM" "$UI_R"
-    printf '   %s2)%s lightdm   %s·%s GTK greeter, lightweight\n' "$UI_CYN" "$UI_R" "$UI_DIM" "$UI_R"
-    printf '   %s3)%s gdm       %s·%s GNOME display manager\n' "$UI_CYN" "$UI_R" "$UI_DIM" "$UI_R"
-    printf '   %s4)%s ly        %s·%s TUI greeter (Fedora: enables fnux/ly COPR if needed)\n' "$UI_CYN" "$UI_R" "$UI_DIM" "$UI_R"
-    printf '   %sq)%s skip      %s·%s do not install now\n\n' "$UI_YLW" "$UI_R" "$UI_DIM" "$UI_R"
+    printf '   %s2)%s ly        %s·%s TUI greeter (Fedora: enables fnux/ly COPR if needed)\n' "$UI_CYN" "$UI_R" "$UI_DIM" "$UI_R"
+    printf '   %s3)%s lightdm   %s·%s GTK greeter, lightweight\n' "$UI_CYN" "$UI_R" "$UI_DIM" "$UI_R"
+    printf '   %s4)%s gdm       %s·%s GNOME display manager\n' "$UI_CYN" "$UI_R" "$UI_DIM" "$UI_R"
+    printf '   %sq)%s skip      %s·%s do not change / install a display manager now\n\n' "$UI_YLW" "$UI_R" "$UI_DIM" "$UI_R"
     read -r -p "$(printf '%s▶%s Type 1–4 (see map) or q to skip [q]: ' "$UI_CYN" "$UI_R")" choice || true
     choice="${choice//[[:space:]]/}"
     choice="${choice,,}"
     case "$choice" in
       1|sddm) echo sddm; return 0 ;;
-      2|lightdm) echo lightdm; return 0 ;;
-      3|gdm) echo gdm; return 0 ;;
-      4|ly) echo ly; return 0 ;;
+      2|ly) echo ly; return 0 ;;
+      3|lightdm) echo lightdm; return 0 ;;
+      4|gdm) echo gdm; return 0 ;;
       ""|q|skip) return 1 ;;
     esac
-    ui_warn "invalid choice — type 1=sddm, 2=lightdm, 3=gdm, 4=ly, or q (see map above)"
+    ui_warn "invalid choice — type 1=sddm, 2=ly, 3=lightdm, 4=gdm, or q (see map above)"
   done
 }
 
 choose_display_manager_if_needed() {
   CHOSEN_DM=""
   [[ "$SKIP_DISPLAY_MANAGER" -eq 1 ]] && return 0
-  if any_display_manager_pkg; then
-    ui_ok "display manager already installed ($(list_installed_display_managers))"
-    return 0
-  fi
-  ui_info "no display manager package among: sddm, lightdm, gdm, ly"
-  if [[ "$INSTALL_PKGS" -eq 0 ]]; then
-    if [[ -n "$DISPLAY_MANAGER_CLI" ]]; then
-      ui_err "--display-manager cannot be used with --no-packages"
-      exit 1
-    fi
-    ui_warn "with --no-packages, install one yourself (e.g. sudo dnf install sddm && sudo systemctl enable sddm)"
-    return 0
-  fi
-  local picked=""
+
   if [[ -n "$DISPLAY_MANAGER_CLI" ]]; then
+    local picked=""
     if ! picked="$(normalize_dm_id "$DISPLAY_MANAGER_CLI")"; then
-      ui_err "invalid --display-manager (use sddm, lightdm, gdm, or ly)"
-      exit 1
-    fi
-    if ! command -v dnf >/dev/null 2>&1; then
-      ui_err "--display-manager requires dnf (not found in PATH)"
+      ui_err "invalid --display-manager (use sddm, ly, lightdm, or gdm)"
       exit 1
     fi
     CHOSEN_DM="$picked"
+    if [[ "$INSTALL_PKGS" -eq 0 ]]; then
+      if ! rpm_have "$picked"; then
+        ui_err "package for --display-manager $picked is not installed; install it first or re-run without --no-packages"
+        exit 1
+      fi
+    elif ! command -v dnf >/dev/null 2>&1; then
+      ui_err "--display-manager install path requires dnf (not found in PATH)"
+      exit 1
+    fi
     return 0
   fi
-  if ! command -v dnf >/dev/null 2>&1; then
-    ui_warn "dnf not found — install a display manager with your package manager and enable its service"
-    return 0
-  fi
+
+  [[ "$DRY_RUN" -eq 1 ]] && return 0
+
   if [[ ! -t 0 ]]; then
     ui_warn "non-interactive session — skipping display manager (use --display-manager NAME or --skip-display-manager)"
     return 0
   fi
+
+  local picked=""
   if picked="$(prompt_display_manager)"; then
     CHOSEN_DM="$picked"
+    if [[ "$INSTALL_PKGS" -eq 0 ]] && ! rpm_have "$picked"; then
+      ui_err "$picked is not installed — install it first or re-run without --no-packages"
+      exit 1
+    fi
+    if [[ "$INSTALL_PKGS" -eq 1 ]] && ! command -v dnf >/dev/null 2>&1; then
+      if ! rpm_have "$picked"; then
+        ui_err "dnf not found — install $picked with your package manager, then re-run"
+        exit 1
+      fi
+      ui_warn "dnf not found — will only enable $picked if the package is already present"
+    fi
   else
-    ui_info "skipping display manager install"
+    ui_info "skipping display manager"
   fi
 }
 
@@ -655,7 +704,15 @@ ly_postinstall_fix_tty() {
 
 install_chosen_display_manager() {
   [[ -z "$CHOSEN_DM" ]] && return 0
-  [[ "$INSTALL_PKGS" -eq 0 ]] && return 0
+  if [[ "$INSTALL_PKGS" -eq 0 ]]; then
+    if rpm_have "$CHOSEN_DM"; then
+      ui_section "Display manager"
+      printf '%s · %sSetting %s as the active login manager (packages already present)…%s\n' "$UI_CYN" "$UI_R" "$UI_BLD$CHOSEN_DM$UI_R" "$UI_R"
+      enable_chosen_display_manager
+      ly_postinstall_fix_tty
+    fi
+    return 0
+  fi
   command -v dnf >/dev/null 2>&1 || return 0
   local list
   list="$(dm_dnf_package_list "$CHOSEN_DM")" || return 1
@@ -714,7 +771,7 @@ ensure_lgl_system_loadout() {
     printf '%s[dry-run]%s would: sudo dnf install -y lgl-system-loadout\n' "$UI_YLW" "$UI_R"
     return 0
   fi
-  ui_section "COPR: lgl-system-loadout"
+  ui_section "Step 5/5 — LGL system loadout (COPR)"
   printf '%s · %senabling linuxgamerlife/lgl-system-loadout…%s\n' "$UI_CYN" "$UI_DIM" "$UI_R"
   run sudo dnf copr enable -y linuxgamerlife/lgl-system-loadout
   printf '%s · %sinstalling lgl-system-loadout…%s\n' "$UI_CYN" "$UI_DIM" "$UI_R"
@@ -737,6 +794,9 @@ backup_if_exists() {
 choose_compositor_if_needed
 
 choose_display_manager_if_needed
+
+KEYBOARD_LAYOUT_RESOLVED="$(resolve_keyboard_layout)"
+WALLPAPER_DIR_RESOLVED="$(resolve_wallpaper_dir)"
 
 ui_section "Paths"
 ui_info "config → $CONFIG"
@@ -771,8 +831,6 @@ else
 fi
 
 ensure_pavucontrol
-
-ensure_lgl_system_loadout
 
 install_chosen_display_manager
 
@@ -842,7 +900,7 @@ if [[ "$DRY_RUN" -eq 0 ]]; then
   run mkdir -p "$WALLPAPER_DIR_RESOLVED"
 fi
 
-ui_section "Dotfiles"
+ui_section "Step 4/5 — Dotfiles"
 for name in sway waybar wlogout kitty fuzzel; do
   dest="$CONFIG/$name"
   if [[ -e "$dest" ]]; then
@@ -896,5 +954,7 @@ if [[ "$DRY_RUN" -eq 0 ]]; then
     ui_warn "missing ~/.config/sway/themes/ — copy sway/themes from the repo, then: ~/.config/sway/theme-switch.sh catppuccin"
   fi
 fi
+
+ensure_lgl_system_loadout
 
 ui_footer
