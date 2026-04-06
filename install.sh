@@ -963,6 +963,16 @@ else
   fi
 fi
 
+# Hyprland needs Waybar hyprland/* modules; Sway keeps sway/* in config.jsonc.
+if needs_hypr_dotfiles && [[ -f "$SCRIPT_DIR/waybar/config-hyprland.jsonc" ]]; then
+  if [[ "$DRY_RUN" -eq 1 ]]; then
+    run cp -a "$SCRIPT_DIR/waybar/config-hyprland.jsonc" "$CONFIG/waybar/config.jsonc"
+  else
+    cp -a "$SCRIPT_DIR/waybar/config-hyprland.jsonc" "$CONFIG/waybar/config.jsonc"
+    ui_ok "waybar: using Hyprland modules (config-hyprland.jsonc → ~/.config/waybar/config.jsonc)"
+  fi
+fi
+
 write_keyboard_layout_configs "$KEYBOARD_LAYOUT_RESOLVED"
 
 # Executable scripts

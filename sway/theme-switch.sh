@@ -126,6 +126,7 @@ apply_theme() {
 
   if [[ "$RELOAD" -eq 1 ]]; then
     swaymsg reload 2>/dev/null || true
+    hyprctl reload 2>/dev/null || true
     pkill -SIGUSR2 waybar 2>/dev/null || true
     pkill -SIGUSR1 kitty 2>/dev/null || true
   fi

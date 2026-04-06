@@ -13,7 +13,9 @@ rsync -a --delete \
   --exclude '.claude/' \
   "$SRC/sway/" "$SCRIPT_DIR/sway/"
 
-rsync -a --delete "$SRC/waybar/" "$SCRIPT_DIR/waybar/"
+rsync -a --delete \
+  --exclude 'config-hyprland.jsonc' \
+  "$SRC/waybar/" "$SCRIPT_DIR/waybar/"
 rsync -a --delete "$SRC/wlogout/" "$SCRIPT_DIR/wlogout/"
 if [[ -d "$SRC/kitty" ]]; then
   rsync -a --delete "$SRC/kitty/" "$SCRIPT_DIR/kitty/"

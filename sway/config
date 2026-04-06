@@ -90,6 +90,8 @@ smart_gaps off
 
 ### Key bindings
 #
+# Hyprland session: the same roles are bound in ~/.config/hypr/hyprland.conf (SUPER = Mod).
+#
 # Basics:
 #
     # Start a terminal
