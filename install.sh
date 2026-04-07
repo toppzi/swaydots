@@ -9,8 +9,11 @@ INSTALL_PKGS=1
 WALLPAPER_DIR_CLI=""
 KEYBOARD_LAYOUT_CLI=""
 SKIP_DISPLAY_MANAGER=0
-# LGL is opt-in: it often conflicts with Hyprland COPR (Qt6). Use --with-lgl to install.
-WANT_LGL=0
+# LGL selection:
+# - auto: ask at end in interactive installs
+# - yes: install (set by --with-lgl)
+# - no: skip (set by --skip-lgl)
+WANT_LGL="auto"
 DISPLAY_MANAGER_CLI=""
 CHOSEN_DM=""
 COMPOSITOR_CLI=""
@@ -50,7 +53,8 @@ Usage: install.sh [options]
   and optionally installs Fedora packages (Hyprland compositor and stack).
 
   Interactive install (TTY): Step 1 login manager, Step 2 keyboard (XKB), Step 3 dotfiles.
-  Optional: LGL (linuxgamerlife COPR) only with --with-lgl — often conflicts with Hyprland Qt; default is skip.
+  Optional: LGL (linuxgamerlife COPR) is prompted at the end for interactive installs.
+            It can conflict with Hyprland Qt packages; default choice is skip.
   Non-interactive: use the flags below.
 
   Shared stack: waybar, wlogout, kitty, fuzzel, grim, slurp, etc.
@@ -65,8 +69,8 @@ Options:
                      installs if needed with dnf.
   --skip-display-manager
                      Do not check, prompt, or install a display manager.
-  --with-lgl         Enable COPR and install lgl-system-loadout (optional; may fail with Qt6 vs Hyprland COPR).
-  --skip-lgl         Same as default: do not install LGL (kept for scripts that passed this flag before).
+  --with-lgl         Enable COPR and install lgl-system-loadout without prompting.
+  --skip-lgl         Skip LGL install without prompting.
   --compositor NAME  Must be hyprland (optional; default is Hyprland). Refuses sway.
   --keyboard-layout CODE
                      XKB layout for Hyprland (se, us, no, fi, fr, dk, gb). Use gb for UK English.
@@ -107,8 +111,8 @@ while [[ $# -gt 0 ]]; do
       shift
       ;;
     --skip-display-manager) SKIP_DISPLAY_MANAGER=1 ;;
-    --with-lgl) WANT_LGL=1 ;;
-    --skip-lgl) WANT_LGL=0 ;;
+    --with-lgl) WANT_LGL="yes" ;;
+    --skip-lgl) WANT_LGL="no" ;;
     --compositor)
       if [[ -z "${2:-}" ]]; then
         ui_err "missing name for --compositor (hyprland only)"
@@ -148,7 +152,11 @@ ui_banner() {
   rule="$(printf '─%.0s' {1..58})"
   [[ "$DRY_RUN" -eq 1 ]] && mode+="dry-run"
   [[ "$INSTALL_PKGS" -eq 0 ]] && mode+="${mode:+ · }no-packages"
-  [[ "$WANT_LGL" -eq 1 ]] && mode+="${mode:+ · }with-lgl"
+  if [[ "$WANT_LGL" == "yes" ]]; then
+    mode+="${mode:+ · }with-lgl"
+  elif [[ "$WANT_LGL" == "no" ]]; then
+    mode+="${mode:+ · }skip-lgl"
+  fi
   printf '\n'
   printf '%s╭%s╮%s\n' "$UI_CYN" "$rule" "$UI_R"
   printf '%s│  %s%-52s%s  %s│%s\n' "$UI_CYN" "$UI_BLD" "Wayland dotfiles installer" "$UI_R" "$UI_CYN" "$UI_R"
@@ -622,8 +630,27 @@ ensure_pavucontrol() {
 }
 
 ensure_lgl_system_loadout() {
-  [[ "$WANT_LGL" -eq 0 ]] && {
-    ui_info "skipping LGL (default). Hyprland does not need it. To try anyway: ./install.sh --with-lgl"
+  if [[ "$WANT_LGL" == "auto" ]]; then
+    if [[ "$INSTALL_PKGS" -eq 1 ]] && [[ -t 0 ]]; then
+      local ans=""
+      printf '\n%s▶ %sOptional — LGL system loadout%s\n' "$UI_MAG" "$UI_BLD" "$UI_R"
+      printf '%s%s%s\n' "$UI_DIM" "$(printf '─%.0s' {1..58})" "$UI_R"
+      printf '%s Install %slgl-system-loadout%s now? (recommended only if you want it)%s\n' "$UI_R" "$UI_BLD" "$UI_R" "$UI_R"
+      printf '%s Note: it can conflict with Hyprland COPR packages on Qt6; skipping is safe.%s\n\n' "$UI_DIM" "$UI_R"
+      read -r -p "$(printf '%s▶%s Install LGL now? [y/N]: ' "$UI_CYN" "$UI_R")" ans || true
+      ans="${ans//[[:space:]]/}"
+      ans="${ans,,}"
+      case "${ans:-n}" in
+        y|yes) WANT_LGL="yes" ;;
+        *) WANT_LGL="no" ;;
+      esac
+    else
+      WANT_LGL="no"
+    fi
+  fi
+
+  [[ "$WANT_LGL" == "no" ]] && {
+    ui_info "skipping LGL. To install later: ./install.sh --with-lgl"
     return 0
   }
   [[ "$INSTALL_PKGS" -eq 0 ]] && {
@@ -636,7 +663,7 @@ ensure_lgl_system_loadout() {
     printf '%s[dry-run]%s would: sudo dnf install -y lgl-system-loadout\n' "$UI_YLW" "$UI_R"
     return 0
   fi
-  ui_section "Optional — LGL system loadout (COPR, --with-lgl)"
+  ui_section "Optional — LGL system loadout (COPR)"
   printf '%s · %senabling linuxgamerlife/lgl-system-loadout…%s\n' "$UI_CYN" "$UI_DIM" "$UI_R"
   run sudo dnf copr enable -y linuxgamerlife/lgl-system-loadout || true
   printf '%s · %sinstalling lgl-system-loadout…%s\n' "$UI_CYN" "$UI_DIM" "$UI_R"

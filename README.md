@@ -71,9 +71,9 @@ That is all you need to start.
    - `~/Pictures/Wallpapers`
 7. Creates that wallpaper folder if it does not exist.
 8. Installs and enables one selected login manager.
-9. **Does not** install LGL by default (it often conflicts with Hyprland COPR on Qt6). To try LGL: `./install.sh --with-lgl`.
+9. At the end, installer asks if you want optional LGL (`lgl-system-loadout`). Default answer is **No** because it often conflicts with Hyprland COPR on Qt6.
 10. On first Hyprland login:
-    - opens LGL once **only if** you installed it (`--with-lgl` or manual `dnf install`), or
+   - opens LGL once **only if** you installed it (end prompt, `--with-lgl`, or manual `dnf install`), or
     - shows a welcome notification with keybinds.
 
 ## Safe DNF Behavior (Built In)
