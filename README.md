@@ -141,6 +141,16 @@ Help:
 
 ## Common Problems
 
+### “Missing hyprland-qtutils” (or error at Hyprland login)
+
+Install the Qt helpers Hyprland expects on Fedora, then log in again:
+
+```bash
+sudo dnf install -y hyprland-qtutils
+```
+
+The installer now pulls this package automatically on new installs.
+
 If package download fails (librepo/dnf errors), run:
 
 ```bash

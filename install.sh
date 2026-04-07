@@ -415,6 +415,7 @@ build_system_pkgs_array() {
   )
   local -a hypr_pkgs=(
     hyprland
+    hyprland-qtutils
     xdg-desktop-portal-hyprland
     xdg-desktop-portal-gtk
     mate-polkit
