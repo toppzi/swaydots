@@ -57,7 +57,6 @@ That is all you need to start.
 1. Installs missing dependencies with `dnf` (safe retry pattern included).
 2. Lets you choose login manager:
    - `sddm`
-   - `gdm`
    - `lightdm`
 3. Lets you choose keyboard layout:
    - `se`, `us`, `no`, `fi`, `fr`, `dk`, `gb`

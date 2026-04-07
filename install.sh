@@ -9,6 +9,7 @@ INSTALL_PKGS=1
 WALLPAPER_DIR_CLI=""
 KEYBOARD_LAYOUT_CLI=""
 SKIP_DISPLAY_MANAGER=0
+SKIP_LGL=0
 DISPLAY_MANAGER_CLI=""
 CHOSEN_DM=""
 COMPOSITOR_CLI=""
@@ -58,10 +59,11 @@ Options:
   --wallpaper-dir PATH
                      Set wallpaper folder (non-interactive). Expands ~.
   --display-manager NAME
-                     Set login manager to NAME (sddm, gdm, lightdm). Non-interactive;
+                     Set login manager to NAME (sddm or lightdm). Non-interactive;
                      installs if needed with dnf.
   --skip-display-manager
                      Do not check, prompt, or install a display manager.
+  --skip-lgl         Do not enable COPR or install lgl-system-loadout (avoids Qt6 conflicts with Hyprland COPR).
   --compositor NAME  Must be hyprland (optional; default is Hyprland). Refuses sway.
   --keyboard-layout CODE
                      XKB layout for Hyprland (se, us, no, fi, fr, dk, gb). Use gb for UK English.
@@ -95,13 +97,14 @@ while [[ $# -gt 0 ]]; do
       ;;
     --display-manager)
       if [[ -z "${2:-}" ]]; then
-        ui_err "missing name for --display-manager (sddm, gdm, lightdm)"
+        ui_err "missing name for --display-manager (sddm or lightdm)"
         exit 1
       fi
       DISPLAY_MANAGER_CLI="${2,,}"
       shift
       ;;
     --skip-display-manager) SKIP_DISPLAY_MANAGER=1 ;;
+    --skip-lgl) SKIP_LGL=1 ;;
     --compositor)
       if [[ -z "${2:-}" ]]; then
         ui_err "missing name for --compositor (hyprland only)"
@@ -141,6 +144,7 @@ ui_banner() {
   rule="$(printf '─%.0s' {1..58})"
   [[ "$DRY_RUN" -eq 1 ]] && mode+="dry-run"
   [[ "$INSTALL_PKGS" -eq 0 ]] && mode+="${mode:+ · }no-packages"
+  [[ "$SKIP_LGL" -eq 1 ]] && mode+="${mode:+ · }skip-lgl"
   printf '\n'
   printf '%s╭%s╮%s\n' "$UI_CYN" "$rule" "$UI_R"
   printf '%s│  %s%-52s%s  %s│%s\n' "$UI_CYN" "$UI_BLD" "Wayland dotfiles installer" "$UI_R" "$UI_CYN" "$UI_R"
@@ -330,7 +334,10 @@ normalize_dm_id() {
   case "${1,,}" in
     sddm) echo sddm ;;
     lightdm) echo lightdm ;;
-    gdm) echo gdm ;;
+    gdm)
+      ui_err "GDM is not supported by this installer; use sddm or lightdm"
+      exit 1
+      ;;
     *) return 1 ;;
   esac
 }
@@ -467,7 +474,7 @@ dnf_install_system_packages() {
   return 1
 }
 
-# Step 1/4 — Login manager (order: 1 SDDM, 2 GDM, 3 LightDM)
+# Step 1/4 — Login manager (order: 1 SDDM, 2 LightDM)
 prompt_display_manager() {
   local choice=""
   while true; do
@@ -478,24 +485,22 @@ prompt_display_manager() {
       if any_display_manager_pkg; then
         printf '%s Installed now: %s%s%s\n' "$UI_DIM" "$UI_BLD" "$(list_installed_display_managers)" "$UI_R"
       else
-        printf '%s No sddm / gdm / lightdm detected — one will be installed with dnf.%s\n' "$UI_DIM" "$UI_R"
+        printf '%s No sddm / lightdm / gdm detected — one will be installed with dnf (GDM is not offered here).%s\n' "$UI_DIM" "$UI_R"
       fi
-      printf '%s   %s1=sddm  2=gdm  3=lightdm  q=skip%s\n\n' "$UI_BLD" "$UI_CYN" "$UI_R"
+      printf '%s   %s1=sddm  2=lightdm  q=skip%s\n\n' "$UI_BLD" "$UI_CYN" "$UI_R"
       printf '   %s1)%s sddm      %s·%s Wayland / Plasma-style setups\n' "$UI_CYN" "$UI_R" "$UI_DIM" "$UI_R"
-      printf '   %s2)%s gdm       %s·%s GNOME display manager\n' "$UI_CYN" "$UI_R" "$UI_DIM" "$UI_R"
-      printf '   %s3)%s lightdm   %s·%s GTK greeter, lightweight\n' "$UI_CYN" "$UI_R" "$UI_DIM" "$UI_R"
+      printf '   %s2)%s lightdm   %s·%s GTK greeter, lightweight\n' "$UI_CYN" "$UI_R" "$UI_DIM" "$UI_R"
       printf '   %sq)%s skip      %s·%s do not change / install a display manager now\n\n' "$UI_YLW" "$UI_R" "$UI_DIM" "$UI_R"
     } >&2
-    read -r -p "$(printf '%s▶%s Type 1–3 (see map above), Enter for SDDM, or q to skip [1]: ' "$UI_CYN" "$UI_R")" choice || true
+    read -r -p "$(printf '%s▶%s Type 1–2 (see map above), Enter for SDDM, or q to skip [1]: ' "$UI_CYN" "$UI_R")" choice || true
     choice="${choice//[[:space:]]/}"
     choice="${choice,,}"
     case "${choice:-1}" in
       q|skip) return 1 ;;
       1|sddm) printf '%s\n' sddm; return 0 ;;
-      2|gdm) printf '%s\n' gdm; return 0 ;;
-      3|lightdm) printf '%s\n' lightdm; return 0 ;;
+      2|lightdm) printf '%s\n' lightdm; return 0 ;;
     esac
-    ui_warn "invalid choice — type 1=sddm, 2=gdm, 3=lightdm, Enter=SDDM, or q (see map above)"
+    ui_warn "invalid choice — type 1=sddm, 2=lightdm, Enter=SDDM, or q (see map above)"
   done
 }
 
@@ -506,7 +511,7 @@ choose_display_manager_if_needed() {
   if [[ -n "$DISPLAY_MANAGER_CLI" ]]; then
     local picked=""
     if ! picked="$(normalize_dm_id "$DISPLAY_MANAGER_CLI")"; then
-      ui_err "invalid --display-manager (use sddm, gdm, or lightdm)"
+      ui_err "invalid --display-manager (use sddm or lightdm)"
       exit 1
     fi
     CHOSEN_DM="$picked"
@@ -552,7 +557,6 @@ dm_dnf_package_list() {
   case "$1" in
     sddm) echo sddm ;;
     lightdm) echo lightdm lightdm-gtk ;;
-    gdm) echo gdm ;;
     *) return 1 ;;
   esac
 }
@@ -614,6 +618,10 @@ ensure_pavucontrol() {
 }
 
 ensure_lgl_system_loadout() {
+  [[ "$SKIP_LGL" -eq 1 ]] && {
+    ui_info "skipping LGL system loadout (--skip-lgl)"
+    return 0
+  }
   [[ "$INSTALL_PKGS" -eq 0 ]] && return 0
   command -v dnf >/dev/null 2>&1 || return 0
   if [[ "$DRY_RUN" -eq 1 ]]; then
@@ -623,10 +631,16 @@ ensure_lgl_system_loadout() {
   fi
   ui_section "Step 4/4 — LGL system loadout (COPR)"
   printf '%s · %senabling linuxgamerlife/lgl-system-loadout…%s\n' "$UI_CYN" "$UI_DIM" "$UI_R"
-  run sudo dnf copr enable -y linuxgamerlife/lgl-system-loadout
+  run sudo dnf copr enable -y linuxgamerlife/lgl-system-loadout || true
   printf '%s · %sinstalling lgl-system-loadout…%s\n' "$UI_CYN" "$UI_DIM" "$UI_R"
-  run sudo dnf install -y lgl-system-loadout
-  ui_ok "lgl-system-loadout installed"
+  if run sudo dnf install -y lgl-system-loadout; then
+    ui_ok "lgl-system-loadout installed"
+    return 0
+  fi
+  ui_warn "Could not install lgl-system-loadout — common cause: Qt6 version clash between this COPR and Hyprland/solopasha packages."
+  ui_warn "Hyprland session is still fine. Install LGL later after Qt settles, or use: ./install.sh --skip-lgl"
+  ui_warn "Try: sudo dnf upgrade --refresh && sudo dnf install lgl-system-loadout"
+  return 0
 }
 
 backup_if_exists() {
