@@ -58,13 +58,13 @@ Options:
   --wallpaper-dir PATH
                      Set wallpaper folder (non-interactive). Expands ~.
   --display-manager NAME
-                     Set login manager to NAME (sddm, ly, lightdm, gdm). Non-interactive;
+                     Set login manager to NAME (sddm, gdm, lightdm). Non-interactive;
                      installs if needed with dnf.
   --skip-display-manager
                      Do not check, prompt, or install a display manager.
   --compositor NAME  Must be hyprland (optional; default is Hyprland). Refuses sway.
   --keyboard-layout CODE
-                     XKB layout for Hyprland (e.g. us, se, gb, no, de). Use gb for UK English.
+                     XKB layout for Hyprland (se, us, no, fi, fr, dk, gb). Use gb for UK English.
                      Non-interactive; default us if omitted in CI.
   -h, --help         Show this help.
 
@@ -95,7 +95,7 @@ while [[ $# -gt 0 ]]; do
       ;;
     --display-manager)
       if [[ -z "${2:-}" ]]; then
-        ui_err "missing name for --display-manager (sddm, ly, lightdm, gdm)"
+        ui_err "missing name for --display-manager (sddm, gdm, lightdm)"
         exit 1
       fi
       DISPLAY_MANAGER_CLI="${2,,}"
@@ -112,7 +112,7 @@ while [[ $# -gt 0 ]]; do
       ;;
     --keyboard-layout)
       if [[ -z "${2:-}" ]]; then
-        ui_err "missing code for --keyboard-layout (e.g. us, se, gb, no)"
+        ui_err "missing code for --keyboard-layout (se, us, no, fi, fr, dk, gb)"
         exit 1
       fi
       KEYBOARD_LAYOUT_CLI="$2"
@@ -200,7 +200,7 @@ normalize_wallpaper_dir() {
   local raw="$1"
   local p
   if [[ -z "$raw" ]]; then
-    p="${HOME}/Pictures/wallpapers"
+    p="${HOME}/Pictures/Wallpapers"
   else
     p="$(expand_tilde_path "$raw")"
   fi
@@ -212,21 +212,12 @@ normalize_wallpaper_dir() {
 }
 
 resolve_wallpaper_dir() {
-  local default="${HOME}/Pictures/wallpapers"
-  local input=""
+  # Minimal installer default: always use ~/Pictures/Wallpapers unless overridden by flag.
   if [[ -n "$WALLPAPER_DIR_CLI" ]]; then
     normalize_wallpaper_dir "$WALLPAPER_DIR_CLI"
     return
   fi
-  if [[ -t 0 ]]; then
-    read -r -p "$(printf '%s▶%s Wallpaper directory for picker [ %s%s%s ]: ' "$UI_CYN" "$UI_R" "$UI_DIM" "$default" "$UI_R")" input || true
-  fi
-  # Non-interactive (piped CI, etc.): use default or pass --wallpaper-dir.
-  if [[ -z "${input// }" ]]; then
-    normalize_wallpaper_dir ""
-  else
-    normalize_wallpaper_dir "$input"
-  fi
+  normalize_wallpaper_dir ""
 }
 
 normalize_keyboard_layout_token() {
@@ -248,54 +239,33 @@ validate_xkb_layout_string() {
 }
 
 prompt_keyboard_layout() {
-  local choice="" custom=""
+  local choice=""
   while true; do
-    # All UI on stderr so stdout stays a single line for KEYBOARD_LAYOUT_RESOLVED="$(…)"
     {
       printf '\n%s▶ %sStep 2/4 — Keyboard layout (XKB)%s\n' "$UI_MAG" "$UI_BLD" "$UI_R"
       printf '%s%s%s\n' "$UI_DIM" "$(printf '─%.0s' {1..58})" "$UI_R"
-      printf '%s Each number sets the layout code for Hyprland (and Sway config files if present):%s\n' "$UI_R" "$UI_R"
-      printf '%s   %s1=us  2=se  3=gb(UK)  4=no  5=dk  6=fi  7=de  8=fr  9=es  o=other code%s\n\n' "$UI_BLD" "$UI_R"
-      printf '   %s1)%s us     %s·%s US English (xkb: us)\n' "$UI_CYN" "$UI_R" "$UI_DIM" "$UI_R"
-      printf '   %s2)%s se     %s·%s Swedish (xkb: se)\n' "$UI_CYN" "$UI_R" "$UI_DIM" "$UI_R"
-      printf '   %s3)%s gb     %s·%s UK English (xkb: gb; you can also type %suk%s)\n' "$UI_CYN" "$UI_R" "$UI_DIM" "$UI_R" "$UI_BLD" "$UI_R"
-      printf '   %s4)%s no     %s·%s Norwegian (xkb: no)\n' "$UI_CYN" "$UI_R" "$UI_DIM" "$UI_R"
-      printf '   %s5)%s dk     %s·%s Danish (xkb: dk)\n' "$UI_CYN" "$UI_R" "$UI_DIM" "$UI_R"
-      printf '   %s6)%s fi     %s·%s Finnish (xkb: fi)\n' "$UI_CYN" "$UI_R" "$UI_DIM" "$UI_R"
-      printf '   %s7)%s de     %s·%s German (xkb: de)\n' "$UI_CYN" "$UI_R" "$UI_DIM" "$UI_R"
-      printf '   %s8)%s fr     %s·%s French (xkb: fr)\n' "$UI_CYN" "$UI_R" "$UI_DIM" "$UI_R"
-      printf '   %s9)%s es     %s·%s Spanish (xkb: es)\n' "$UI_CYN" "$UI_R" "$UI_DIM" "$UI_R"
-      printf '   %so)%s        %s·%s Other — then type xkb code (e.g. pl, nl, ru, ch)\n\n' "$UI_YLW" "$UI_R" "$UI_DIM" "$UI_R"
+      printf '%s Choose keyboard layout for Hyprland:%s\n' "$UI_R" "$UI_R"
+      printf '%s   %s1=se  2=us  3=no  4=fi  5=fr  6=dk  7=gb%s\n\n' "$UI_BLD" "$UI_CYN" "$UI_R"
+      printf '   %s1)%s se     %s·%s Swedish\n' "$UI_CYN" "$UI_R" "$UI_DIM" "$UI_R"
+      printf '   %s2)%s us     %s·%s US English\n' "$UI_CYN" "$UI_R" "$UI_DIM" "$UI_R"
+      printf '   %s3)%s no     %s·%s Norwegian\n' "$UI_CYN" "$UI_R" "$UI_DIM" "$UI_R"
+      printf '   %s4)%s fi     %s·%s Finnish\n' "$UI_CYN" "$UI_R" "$UI_DIM" "$UI_R"
+      printf '   %s5)%s fr     %s·%s French\n' "$UI_CYN" "$UI_R" "$UI_DIM" "$UI_R"
+      printf '   %s6)%s dk     %s·%s Danish\n' "$UI_CYN" "$UI_R" "$UI_DIM" "$UI_R"
+      printf '   %s7)%s gb     %s·%s British English\n\n' "$UI_CYN" "$UI_R" "$UI_DIM" "$UI_R"
     } >&2
-    read -r -p "$(printf '%s▶%s Type 1–9, o, or Enter for us (layout %sus%s) [us]: ' "$UI_CYN" "$UI_R" "$UI_BLD" "$UI_R")" choice || true
+    read -r -p "$(printf '%s▶%s Type 1–7 or Enter for us [2]: ' "$UI_CYN" "$UI_R")" choice || true
     choice="${choice//[[:space:]]/}"
     choice="${choice,,}"
-    case "${choice:-us}" in
-      ""|1|us) printf '%s\n' us; return 0 ;;
-      2|se) printf '%s\n' se; return 0 ;;
-      3|gb|uk) printf '%s\n' gb; return 0 ;;
-      4|no) printf '%s\n' no; return 0 ;;
-      5|dk) printf '%s\n' dk; return 0 ;;
-      6|fi) printf '%s\n' fi; return 0 ;;
-      7|de) printf '%s\n' de; return 0 ;;
-      8|fr) printf '%s\n' fr; return 0 ;;
-      9|es) printf '%s\n' es; return 0 ;;
-      o|other)
-        read -r -p "$(printf '%s▶%s XKB layout code: ' "$UI_CYN" "$UI_R")" custom || true
-        custom="$(apply_keyboard_layout_aliases "$custom")"
-        if validate_xkb_layout_string "$custom"; then
-          printf '%s\n' "$custom"
-          return 0
-        fi
-        ui_warn "invalid layout — use letters, digits, commas, hyphen (e.g. us,latam)"
-        ;;
-      *)
-        if validate_xkb_layout_string "$choice"; then
-          printf '%s\n' "$(apply_keyboard_layout_aliases "$choice")"
-          return 0
-        fi
-        ui_warn "invalid choice — use 1=us … 9=es, o=other, or a valid xkb code (see map above)"
-        ;;
+    case "${choice:-2}" in
+      1|se) printf '%s\n' se; return 0 ;;
+      2|us) printf '%s\n' us; return 0 ;;
+      3|no) printf '%s\n' no; return 0 ;;
+      4|fi) printf '%s\n' fi; return 0 ;;
+      5|fr) printf '%s\n' fr; return 0 ;;
+      6|dk) printf '%s\n' dk; return 0 ;;
+      7|gb|uk) printf '%s\n' gb; return 0 ;;
+      *) ui_warn "invalid choice — use 1=se 2=us 3=no 4=fi 5=fr 6=dk 7=gb" ;;
     esac
   done
 }
@@ -305,8 +275,15 @@ resolve_keyboard_layout() {
   if [[ -n "$KEYBOARD_LAYOUT_CLI" ]]; then
     raw="$(normalize_keyboard_layout_token "$KEYBOARD_LAYOUT_CLI")"
     raw="$(apply_keyboard_layout_aliases "$raw")"
+    case "$raw" in
+      se|us|no|fi|fr|dk|gb) ;;
+      *)
+        ui_err "invalid --keyboard-layout (allowed: se, us, no, fi, fr, dk, gb)"
+        exit 1
+        ;;
+    esac
     if ! validate_xkb_layout_string "$raw"; then
-      ui_err "invalid --keyboard-layout (use xkb symbols: us, se, gb, no, or combos like us,ru)"
+      ui_err "invalid --keyboard-layout token"
       exit 1
     fi
     printf '%s' "$raw"
@@ -338,7 +315,7 @@ rpm_have() {
 }
 
 any_display_manager_pkg() {
-  rpm_have sddm || rpm_have lightdm || rpm_have gdm || rpm_have ly
+  rpm_have sddm || rpm_have lightdm || rpm_have gdm
 }
 
 list_installed_display_managers() {
@@ -346,7 +323,6 @@ list_installed_display_managers() {
   rpm_have sddm && parts+=("sddm")
   rpm_have lightdm && parts+=("lightdm")
   rpm_have gdm && parts+=("gdm")
-  rpm_have ly && parts+=("ly")
   (IFS=' '; echo "${parts[*]}")
 }
 
@@ -355,7 +331,6 @@ normalize_dm_id() {
     sddm) echo sddm ;;
     lightdm) echo lightdm ;;
     gdm) echo gdm ;;
-    ly) echo ly ;;
     *) return 1 ;;
   esac
 }
@@ -432,6 +407,8 @@ build_system_pkgs_array() {
     dnf-plugins-core
     waybar wlogout
     kitty fuzzel btop
+    thunar firefox
+    brightnessctl playerctl
     grim slurp wl-clipboard
     python3-gobject gtk3 gettext
     google-noto-sans-mono-vf-fonts fontawesome-6-free-fonts fontawesome-6-brands-fonts
@@ -478,7 +455,7 @@ dnf_install_system_packages() {
   return 1
 }
 
-# Step 1/4 — Login manager (order: 1 SDDM, 2 Ly, 3 LightDM, 4 GDM)
+# Step 1/4 — Login manager (order: 1 SDDM, 2 GDM, 3 LightDM)
 prompt_display_manager() {
   local choice=""
   while true; do
@@ -489,26 +466,24 @@ prompt_display_manager() {
       if any_display_manager_pkg; then
         printf '%s Installed now: %s%s%s\n' "$UI_DIM" "$UI_BLD" "$(list_installed_display_managers)" "$UI_R"
       else
-        printf '%s No sddm / ly / lightdm / gdm detected — one will be installed with dnf.%s\n' "$UI_DIM" "$UI_R"
+        printf '%s No sddm / gdm / lightdm detected — one will be installed with dnf.%s\n' "$UI_DIM" "$UI_R"
       fi
-      printf '%s   %s1=sddm  2=ly  3=lightdm  4=gdm  q=skip%s\n\n' "$UI_BLD" "$UI_CYN" "$UI_R"
+      printf '%s   %s1=sddm  2=gdm  3=lightdm  q=skip%s\n\n' "$UI_BLD" "$UI_CYN" "$UI_R"
       printf '   %s1)%s sddm      %s·%s Wayland / Plasma-style setups\n' "$UI_CYN" "$UI_R" "$UI_DIM" "$UI_R"
-      printf '   %s2)%s ly        %s·%s TUI greeter (Fedora: enables fnux/ly COPR if needed)\n' "$UI_CYN" "$UI_R" "$UI_DIM" "$UI_R"
+      printf '   %s2)%s gdm       %s·%s GNOME display manager\n' "$UI_CYN" "$UI_R" "$UI_DIM" "$UI_R"
       printf '   %s3)%s lightdm   %s·%s GTK greeter, lightweight\n' "$UI_CYN" "$UI_R" "$UI_DIM" "$UI_R"
-      printf '   %s4)%s gdm       %s·%s GNOME display manager\n' "$UI_CYN" "$UI_R" "$UI_DIM" "$UI_R"
       printf '   %sq)%s skip      %s·%s do not change / install a display manager now\n\n' "$UI_YLW" "$UI_R" "$UI_DIM" "$UI_R"
     } >&2
-    read -r -p "$(printf '%s▶%s Type 1–4 (see map above), Enter for SDDM, or q to skip [1]: ' "$UI_CYN" "$UI_R")" choice || true
+    read -r -p "$(printf '%s▶%s Type 1–3 (see map above), Enter for SDDM, or q to skip [1]: ' "$UI_CYN" "$UI_R")" choice || true
     choice="${choice//[[:space:]]/}"
     choice="${choice,,}"
     case "${choice:-1}" in
       q|skip) return 1 ;;
       1|sddm) printf '%s\n' sddm; return 0 ;;
-      2|ly) printf '%s\n' ly; return 0 ;;
+      2|gdm) printf '%s\n' gdm; return 0 ;;
       3|lightdm) printf '%s\n' lightdm; return 0 ;;
-      4|gdm) printf '%s\n' gdm; return 0 ;;
     esac
-    ui_warn "invalid choice — type 1=sddm, 2=ly, 3=lightdm, 4=gdm, Enter=SDDM, or q (see map above)"
+    ui_warn "invalid choice — type 1=sddm, 2=gdm, 3=lightdm, Enter=SDDM, or q (see map above)"
   done
 }
 
@@ -519,7 +494,7 @@ choose_display_manager_if_needed() {
   if [[ -n "$DISPLAY_MANAGER_CLI" ]]; then
     local picked=""
     if ! picked="$(normalize_dm_id "$DISPLAY_MANAGER_CLI")"; then
-      ui_err "invalid --display-manager (use sddm, ly, lightdm, or gdm)"
+      ui_err "invalid --display-manager (use sddm, gdm, or lightdm)"
       exit 1
     fi
     CHOSEN_DM="$picked"
@@ -566,7 +541,6 @@ dm_dnf_package_list() {
     sddm) echo sddm ;;
     lightdm) echo lightdm lightdm-gtk ;;
     gdm) echo gdm ;;
-    ly) echo ly ;;
     *) return 1 ;;
   esac
 }
@@ -578,20 +552,10 @@ enable_chosen_display_manager() {
     printf '%s[dry-run]%s would disable other display managers, enable %s, set-default graphical.target\n' "$UI_YLW" "$UI_R" "$svc"
     return 0
   fi
-  run sudo systemctl disable gdm.service sddm.service lightdm.service ly.service 2>/dev/null || true
+  run sudo systemctl disable gdm.service sddm.service lightdm.service 2>/dev/null || true
   run sudo systemctl enable "$svc"
   run sudo systemctl set-default graphical.target 2>/dev/null || true
   ui_ok "enabled $svc (reboot or start the service for graphical login)"
-}
-
-ly_postinstall_fix_tty() {
-  [[ "$CHOSEN_DM" != "ly" ]] && return 0
-  [[ "$DRY_RUN" -eq 1 ]] && return 0
-  # Ly uses tty2 by default; agetty on tty2 prevents the greeter from showing.
-  if systemctl list-unit-files 'getty@tty2.service' &>/dev/null; then
-    run sudo systemctl disable getty@tty2.service 2>/dev/null || true
-    ui_ok "Ly: stopped competing login on tty2 (getty@tty2 disabled — reboot to use Ly)"
-  fi
 }
 
 install_chosen_display_manager() {
@@ -601,7 +565,6 @@ install_chosen_display_manager() {
       ui_section "Display manager"
       printf '%s · %sSetting %s as the active login manager (packages already present)…%s\n' "$UI_CYN" "$UI_R" "$UI_BLD$CHOSEN_DM$UI_R" "$UI_R"
       enable_chosen_display_manager
-      ly_postinstall_fix_tty
     fi
     return 0
   fi
@@ -613,30 +576,13 @@ install_chosen_display_manager() {
   [[ ${#pkgs[@]} -eq 0 ]] && return 1
   if [[ "$DRY_RUN" -eq 1 ]]; then
     printf '%s[dry-run]%s would: sudo dnf install -y %s\n' "$UI_YLW" "$UI_R" "${pkgs[*]}"
-    if [[ "$CHOSEN_DM" == "ly" ]]; then
-      printf '%s[dry-run]%s would enable COPR fnux/ly if ly is missing from repos, then retry install\n' "$UI_YLW" "$UI_R"
-      printf '%s[dry-run]%s would: sudo systemctl disable getty@tty2.service (Ly needs tty2)\n' "$UI_YLW" "$UI_R"
-    fi
     enable_chosen_display_manager
     return 0
   fi
   ui_section "Display manager"
   printf '%s · %sInstalling %s%s…%s\n' "$UI_CYN" "$UI_R" "$UI_BLD" "$CHOSEN_DM" "$UI_R"
-  if [[ "$CHOSEN_DM" == "ly" ]]; then
-    if ! run sudo dnf install -y "${pkgs[@]}"; then
-      ui_warn "Ly is not in Fedora default repos — enabling COPR fnux/ly, then installing again"
-      run sudo dnf copr enable -y fnux/ly
-      run sudo dnf install -y "${pkgs[@]}"
-    fi
-    if ! rpm_have ly; then
-      ui_err "Ly still not installed — see dnf output above (COPR: fnux/ly)"
-      exit 1
-    fi
-  else
-    run sudo dnf install -y "${pkgs[@]}"
-  fi
+  run sudo dnf install -y "${pkgs[@]}"
   enable_chosen_display_manager
-  ly_postinstall_fix_tty
 }
 
 ensure_pavucontrol() {
@@ -848,7 +794,7 @@ write_keyboard_layout_configs "$KEYBOARD_LAYOUT_RESOLVED"
 if [[ "$DRY_RUN" -eq 0 ]]; then
   while IFS= read -r -d '' f; do
     chmod +x "$f"
-  done < <(find "$CONFIG/sway" "$CONFIG/waybar" -type f \( -name '*.sh' -o -name 'wallpaper-picker.py' \) -print0 2>/dev/null || true)
+  done < <(find "$CONFIG/sway" "$CONFIG/waybar" "$CONFIG/hypr" -type f \( -name '*.sh' -o -name 'wallpaper-picker.py' \) -print0 2>/dev/null || true)
   if [[ -f "$CONFIG/sway/theme-switch.sh" ]]; then
     chmod +x "$CONFIG/sway/theme-switch.sh"
   fi
