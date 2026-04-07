@@ -434,7 +434,6 @@ build_system_pkgs_array() {
   )
   local -a hypr_pkgs=(
     hyprland
-    hyprland-qtutils
     xdg-desktop-portal-hyprland
     xdg-desktop-portal-gtk
     mate-polkit
@@ -629,6 +628,34 @@ ensure_pavucontrol() {
   ui_ok "pavucontrol installed"
 }
 
+ensure_hyprland_qtutils_optional() {
+  [[ "$INSTALL_PKGS" -eq 0 ]] && return 0
+  command -v dnf >/dev/null 2>&1 || return 0
+  if rpm_have hyprland-qtutils; then
+    return 0
+  fi
+  # Keep this optional and non-blocking: qtutils can pull COPR-pinned Qt deps.
+  if [[ "$DO_DNF_HYPR" -eq 1 ]]; then
+    ui_warn "Skipping optional hyprland-qtutils auto-install (Hyprland COPR path can pin conflicting Qt versions)."
+    ui_warn "If needed later, try manually: sudo dnf install hyprland-qtutils"
+    return 0
+  fi
+  if [[ "$DRY_RUN" -eq 1 ]]; then
+    printf '%s[dry-run]%s would: sudo dnf install -y --skip-broken hyprland-qtutils\n' "$UI_YLW" "$UI_R"
+    return 0
+  fi
+  ui_section "Optional — hyprland-qtutils"
+  printf '%s · %sInstalling optional Hyprland Qt helpers (non-blocking)…%s\n' "$UI_CYN" "$UI_DIM" "$UI_R"
+  if run sudo dnf install -y --skip-broken hyprland-qtutils; then
+    if rpm_have hyprland-qtutils; then
+      ui_ok "hyprland-qtutils installed"
+      return 0
+    fi
+  fi
+  ui_warn "Could not install hyprland-qtutils now; continuing. Retry later: sudo dnf install hyprland-qtutils"
+  return 0
+}
+
 ensure_lgl_system_loadout() {
   if [[ "$WANT_LGL" == "auto" ]]; then
     if [[ "$INSTALL_PKGS" -eq 1 ]] && [[ -t 0 ]]; then
@@ -745,6 +772,8 @@ else
 fi
 
 ensure_pavucontrol
+
+ensure_hyprland_qtutils_optional
 
 install_chosen_display_manager
 
