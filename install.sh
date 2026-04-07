@@ -635,7 +635,8 @@ ensure_lgl_system_loadout() {
       local ans=""
       printf '\n%s▶ %sOptional — LGL system loadout%s\n' "$UI_MAG" "$UI_BLD" "$UI_R"
       printf '%s%s%s\n' "$UI_DIM" "$(printf '─%.0s' {1..58})" "$UI_R"
-      printf '%s Install %slgl-system-loadout%s now? (recommended only if you want it)%s\n' "$UI_R" "$UI_BLD" "$UI_R" "$UI_R"
+      printf '%s LGL (%slgl-system-loadout%s) is an optional LinuxGamerLife package set with gaming/system tweaks and helper tools.%s\n' "$UI_R" "$UI_BLD" "$UI_R" "$UI_R"
+      printf '%s Install LGL now?%s\n' "$UI_R" "$UI_R"
       printf '%s Note: it can conflict with Hyprland COPR packages on Qt6; skipping is safe.%s\n\n' "$UI_DIM" "$UI_R"
       read -r -p "$(printf '%s▶%s Install LGL now? [y/N]: ' "$UI_CYN" "$UI_R")" ans || true
       ans="${ans//[[:space:]]/}"
@@ -662,13 +663,8 @@ ensure_lgl_system_loadout() {
     ui_ok "lgl-system-loadout already installed"
     return 0
   fi
-  # Common Fedora conflict path:
-  # Hyprland COPR stack often pulls hyprland-qt-support requiring Qt 6.9 private API,
-  # while LGL COPR currently expects Qt 6.10. Skip noisy failing transaction in this case.
   if rpm_have hyprland-qt-support; then
-    ui_warn "Skipping LGL install: detected hyprland-qt-support (Qt stack conflict with linuxgamerlife LGL is common)."
-    ui_warn "Your Hyprland setup is complete. Retry later after COPR rebuilds: sudo dnf upgrade --refresh && sudo dnf install lgl-system-loadout"
-    return 0
+    ui_warn "Detected hyprland-qt-support; LGL may fail due to Qt mismatch, but trying install because you chose yes."
   fi
   if [[ "$DRY_RUN" -eq 1 ]]; then
     printf '%s[dry-run]%s would: sudo dnf copr enable -y linuxgamerlife/lgl-system-loadout\n' "$UI_YLW" "$UI_R"
