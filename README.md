@@ -71,9 +71,9 @@ That is all you need to start.
    - `~/Pictures/Wallpapers`
 7. Creates that wallpaper folder if it does not exist.
 8. Installs and enables one selected login manager.
-9. Installs `lgl-system-loadout` (LGL).
+9. **Does not** install LGL by default (it often conflicts with Hyprland COPR on Qt6). To try LGL: `./install.sh --with-lgl`.
 10. On first Hyprland login:
-    - opens LGL once (if installed), or
+    - opens LGL once **only if** you installed it (`--with-lgl` or manual `dnf install`), or
     - shows a welcome notification with keybinds.
 
 ## Safe DNF Behavior (Built In)
@@ -115,7 +115,7 @@ Also includes useful media/hardware keys:
 1. Reboot (recommended) or log out.
 2. At login screen, choose **Hyprland** session.
 3. Log in.
-4. If this is first login, LGL opens once automatically.
+4. If this is first login and LGL is installed, it may open once; otherwise you get a short welcome notification.
 
 ## Useful Commands
 
@@ -138,6 +138,12 @@ Help:
 ./install.sh --help
 ```
 
+Optional **LGL** (only if you want it — may hit Qt conflicts):
+
+```bash
+./install.sh --with-lgl
+```
+
 ## Common Problems
 
 ### “Missing hyprland-qtutils” (or error at Hyprland login)
@@ -149,6 +155,22 @@ sudo dnf install -y hyprland-qtutils
 ```
 
 The installer now pulls this package automatically on new installs.
+
+### `lgl-system-loadout` fails — “conflicting requests” / Qt6 (`libQt6Core`)
+
+**LGL** (linuxgamerlife COPR) and **Hyprland** (solopasha COPR) often want **different Qt6** versions. The installer **skips LGL by default** so you should not see this during a normal `./install.sh`.
+
+**If you used `--with-lgl` or installed LGL manually and `dnf` errors:**
+
+- **You do not need LGL** for Hyprland. Use the dotfiles install without it.
+- Optional: align packages, then retry:
+
+```bash
+sudo dnf upgrade --refresh
+sudo dnf install lgl-system-loadout
+```
+
+If it still conflicts, wait for COPR rebuilds or skip LGL entirely.
 
 If package download fails (librepo/dnf errors), run:
 

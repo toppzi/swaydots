@@ -9,7 +9,8 @@ INSTALL_PKGS=1
 WALLPAPER_DIR_CLI=""
 KEYBOARD_LAYOUT_CLI=""
 SKIP_DISPLAY_MANAGER=0
-SKIP_LGL=0
+# LGL is opt-in: it often conflicts with Hyprland COPR (Qt6). Use --with-lgl to install.
+WANT_LGL=0
 DISPLAY_MANAGER_CLI=""
 CHOSEN_DM=""
 COMPOSITOR_CLI=""
@@ -48,8 +49,9 @@ Usage: install.sh [options]
   into ~/.config/, writes WALLPAPER_DIR (systemd user environment.d), sets executable bits,
   and optionally installs Fedora packages (Hyprland compositor and stack).
 
-  Interactive install (TTY): Step 1 login manager, Step 2 keyboard (XKB), Step 3 dotfiles,
-  Step 4 LGL system loadout. Non-interactive: use the flags below.
+  Interactive install (TTY): Step 1 login manager, Step 2 keyboard (XKB), Step 3 dotfiles.
+  Optional: LGL (linuxgamerlife COPR) only with --with-lgl — often conflicts with Hyprland Qt; default is skip.
+  Non-interactive: use the flags below.
 
   Shared stack: waybar, wlogout, kitty, fuzzel, grim, slurp, etc.
 
@@ -63,7 +65,8 @@ Options:
                      installs if needed with dnf.
   --skip-display-manager
                      Do not check, prompt, or install a display manager.
-  --skip-lgl         Do not enable COPR or install lgl-system-loadout (avoids Qt6 conflicts with Hyprland COPR).
+  --with-lgl         Enable COPR and install lgl-system-loadout (optional; may fail with Qt6 vs Hyprland COPR).
+  --skip-lgl         Same as default: do not install LGL (kept for scripts that passed this flag before).
   --compositor NAME  Must be hyprland (optional; default is Hyprland). Refuses sway.
   --keyboard-layout CODE
                      XKB layout for Hyprland (se, us, no, fi, fr, dk, gb). Use gb for UK English.
@@ -104,7 +107,8 @@ while [[ $# -gt 0 ]]; do
       shift
       ;;
     --skip-display-manager) SKIP_DISPLAY_MANAGER=1 ;;
-    --skip-lgl) SKIP_LGL=1 ;;
+    --with-lgl) WANT_LGL=1 ;;
+    --skip-lgl) WANT_LGL=0 ;;
     --compositor)
       if [[ -z "${2:-}" ]]; then
         ui_err "missing name for --compositor (hyprland only)"
@@ -144,7 +148,7 @@ ui_banner() {
   rule="$(printf '─%.0s' {1..58})"
   [[ "$DRY_RUN" -eq 1 ]] && mode+="dry-run"
   [[ "$INSTALL_PKGS" -eq 0 ]] && mode+="${mode:+ · }no-packages"
-  [[ "$SKIP_LGL" -eq 1 ]] && mode+="${mode:+ · }skip-lgl"
+  [[ "$WANT_LGL" -eq 1 ]] && mode+="${mode:+ · }with-lgl"
   printf '\n'
   printf '%s╭%s╮%s\n' "$UI_CYN" "$rule" "$UI_R"
   printf '%s│  %s%-52s%s  %s│%s\n' "$UI_CYN" "$UI_BLD" "Wayland dotfiles installer" "$UI_R" "$UI_CYN" "$UI_R"
@@ -618,18 +622,21 @@ ensure_pavucontrol() {
 }
 
 ensure_lgl_system_loadout() {
-  [[ "$SKIP_LGL" -eq 1 ]] && {
-    ui_info "skipping LGL system loadout (--skip-lgl)"
+  [[ "$WANT_LGL" -eq 0 ]] && {
+    ui_info "skipping LGL (default). Hyprland does not need it. To try anyway: ./install.sh --with-lgl"
     return 0
   }
-  [[ "$INSTALL_PKGS" -eq 0 ]] && return 0
+  [[ "$INSTALL_PKGS" -eq 0 ]] && {
+    ui_warn "--with-lgl needs package install; re-run without --no-packages or install lgl-system-loadout yourself"
+    return 0
+  }
   command -v dnf >/dev/null 2>&1 || return 0
   if [[ "$DRY_RUN" -eq 1 ]]; then
     printf '%s[dry-run]%s would: sudo dnf copr enable -y linuxgamerlife/lgl-system-loadout\n' "$UI_YLW" "$UI_R"
     printf '%s[dry-run]%s would: sudo dnf install -y lgl-system-loadout\n' "$UI_YLW" "$UI_R"
     return 0
   fi
-  ui_section "Step 4/4 — LGL system loadout (COPR)"
+  ui_section "Optional — LGL system loadout (COPR, --with-lgl)"
   printf '%s · %senabling linuxgamerlife/lgl-system-loadout…%s\n' "$UI_CYN" "$UI_DIM" "$UI_R"
   run sudo dnf copr enable -y linuxgamerlife/lgl-system-loadout || true
   printf '%s · %sinstalling lgl-system-loadout…%s\n' "$UI_CYN" "$UI_DIM" "$UI_R"
@@ -637,9 +644,8 @@ ensure_lgl_system_loadout() {
     ui_ok "lgl-system-loadout installed"
     return 0
   fi
-  ui_warn "Could not install lgl-system-loadout — common cause: Qt6 version clash between this COPR and Hyprland/solopasha packages."
-  ui_warn "Hyprland session is still fine. Install LGL later after Qt settles, or use: ./install.sh --skip-lgl"
-  ui_warn "Try: sudo dnf upgrade --refresh && sudo dnf install lgl-system-loadout"
+  ui_warn "Could not install lgl-system-loadout — Qt6 mismatch between linuxgamerlife LGL and solopasha Hyprland COPR is common on Fedora."
+  ui_warn "Your Hyprland dotfiles are fine without LGL. Retry later: sudo dnf upgrade --refresh && sudo dnf install lgl-system-loadout"
   return 0
 }
 
