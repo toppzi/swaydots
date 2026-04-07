@@ -441,6 +441,15 @@ verify_chosen_compositor_installed() {
 }
 
 dnf_install_system_packages() {
+  # Best-practice preflight: refresh repo metadata before install.
+  run sudo dnf makecache --refresh
+  if run sudo dnf install -y "$@"; then
+    return 0
+  fi
+  # Safe retry pattern: clear stale metadata and try once more.
+  ui_warn "dnf install failed — cleaning metadata and retrying once…"
+  run sudo dnf clean metadata
+  run sudo dnf makecache --refresh
   if run sudo dnf install -y "$@"; then
     return 0
   fi
@@ -448,8 +457,10 @@ dnf_install_system_packages() {
     ui_warn "dnf failed — Hyprland on Fedora is often packaged via COPR ($HYPR_FEDORA_COPR_MAIN); see $URL_FEDORA_HYPR_TUTORIAL"
     ui_warn "Enabling COPR $HYPR_FEDORA_COPR_MAIN and retrying install…"
     run sudo dnf copr enable -y "$HYPR_FEDORA_COPR_MAIN"
-    run sudo dnf install -y "$@"
-    return 0
+    run sudo dnf makecache --refresh
+    if run sudo dnf install -y "$@"; then
+      return 0
+    fi
   fi
   ui_err "dnf install failed — see output above"
   return 1
