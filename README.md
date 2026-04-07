@@ -160,9 +160,10 @@ The installer now pulls this package automatically on new installs.
 
 **LGL** (linuxgamerlife COPR) and **Hyprland** (solopasha COPR) often want **different Qt6** versions. The installer **skips LGL by default** so you should not see this during a normal `./install.sh`.
 
-**If you used `--with-lgl` or installed LGL manually and `dnf` errors:**
+**If you choose LGL in the end prompt (or use `--with-lgl`) and `dnf` conflicts:**
 
 - **You do not need LGL** for Hyprland. Use the dotfiles install without it.
+- Installer now auto-skips known `hyprland-qt-support` conflict cases to avoid breaking the run.
 - Optional: align packages, then retry:
 
 ```bash

@@ -658,6 +658,18 @@ ensure_lgl_system_loadout() {
     return 0
   }
   command -v dnf >/dev/null 2>&1 || return 0
+  if rpm_have lgl-system-loadout; then
+    ui_ok "lgl-system-loadout already installed"
+    return 0
+  fi
+  # Common Fedora conflict path:
+  # Hyprland COPR stack often pulls hyprland-qt-support requiring Qt 6.9 private API,
+  # while LGL COPR currently expects Qt 6.10. Skip noisy failing transaction in this case.
+  if rpm_have hyprland-qt-support; then
+    ui_warn "Skipping LGL install: detected hyprland-qt-support (Qt stack conflict with linuxgamerlife LGL is common)."
+    ui_warn "Your Hyprland setup is complete. Retry later after COPR rebuilds: sudo dnf upgrade --refresh && sudo dnf install lgl-system-loadout"
+    return 0
+  fi
   if [[ "$DRY_RUN" -eq 1 ]]; then
     printf '%s[dry-run]%s would: sudo dnf copr enable -y linuxgamerlife/lgl-system-loadout\n' "$UI_YLW" "$UI_R"
     printf '%s[dry-run]%s would: sudo dnf install -y lgl-system-loadout\n' "$UI_YLW" "$UI_R"
@@ -667,6 +679,15 @@ ensure_lgl_system_loadout() {
   printf '%s · %senabling linuxgamerlife/lgl-system-loadout…%s\n' "$UI_CYN" "$UI_DIM" "$UI_R"
   run sudo dnf copr enable -y linuxgamerlife/lgl-system-loadout || true
   printf '%s · %sinstalling lgl-system-loadout…%s\n' "$UI_CYN" "$UI_DIM" "$UI_R"
+  if run sudo dnf install -y --skip-broken lgl-system-loadout; then
+    if rpm_have lgl-system-loadout; then
+      ui_ok "lgl-system-loadout installed"
+      return 0
+    fi
+    ui_warn "LGL was skipped by dnf due to dependency conflicts (common Qt mismatch on Fedora COPRs)."
+    ui_warn "Retry later: sudo dnf upgrade --refresh && sudo dnf install lgl-system-loadout"
+    return 0
+  fi
   if run sudo dnf install -y lgl-system-loadout; then
     ui_ok "lgl-system-loadout installed"
     return 0
