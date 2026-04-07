@@ -634,10 +634,8 @@ ensure_hyprland_qtutils_optional() {
   if rpm_have hyprland-qtutils; then
     return 0
   fi
-  # Keep this optional and non-blocking: qtutils can pull COPR-pinned Qt deps.
+  # Optional and non-blocking: qtutils can pull COPR-pinned Qt deps; skip quietly on Hyprland COPR path.
   if [[ "$DO_DNF_HYPR" -eq 1 ]]; then
-    ui_warn "Skipping optional hyprland-qtutils auto-install (Hyprland COPR path can pin conflicting Qt versions)."
-    ui_warn "If needed later, try manually: sudo dnf install hyprland-qtutils"
     return 0
   fi
   if [[ "$DRY_RUN" -eq 1 ]]; then
@@ -652,7 +650,6 @@ ensure_hyprland_qtutils_optional() {
       return 0
     fi
   fi
-  ui_warn "Could not install hyprland-qtutils now; continuing. Retry later: sudo dnf install hyprland-qtutils"
   return 0
 }
 

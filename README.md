@@ -154,7 +154,7 @@ Install the Qt helpers Hyprland expects on Fedora, then log in again:
 sudo dnf install -y hyprland-qtutils
 ```
 
-The installer now pulls this package automatically on new installs.
+The installer tries this package as an optional step when it is safe to do so; if install fails, use the command above.
 
 ### `lgl-system-loadout` fails — “conflicting requests” / Qt6 (`libQt6Core`)
 
@@ -182,6 +182,10 @@ sudo dnf distro-sync --refresh -y
 ```
 
 Then run installer again.
+
+## Thanks
+
+**Thank you** to the [LinuxGamerLife **LGL System Loadout**](https://github.com/linuxgamerlife/lgl-system-loadout) project. It is a graphical Fedora setup wizard that helps you pick software for gaming, content creation, development, and more—without living in the terminal. This dotfiles installer only offers **optional** integration with their `lgl-system-loadout` package; the app, packaging, and roadmap are theirs. We are glad it exists and that it is shared under the MIT license.
 
 ## Notes
 
