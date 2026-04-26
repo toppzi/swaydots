@@ -10,10 +10,9 @@ WALLPAPER_DIR_CLI=""
 KEYBOARD_LAYOUT_CLI=""
 SKIP_DISPLAY_MANAGER=0
 # LGL selection:
-# - auto: ask at end in interactive installs
-# - yes: install (set by --with-lgl)
-# - no: skip (set by --skip-lgl)
-WANT_LGL="auto"
+# - yes: install when explicitly requested via --with-lgl
+# - no: skip (default)
+WANT_LGL="no"
 WANT_CURSOR="auto"
 DISPLAY_MANAGER_CLI=""
 CHOSEN_DM=""
@@ -55,9 +54,9 @@ Usage: install.sh [options]
   into ~/.config/, writes WALLPAPER_DIR (systemd user environment.d), sets executable bits,
   and optionally installs Fedora packages (Hyprland or Sway compositor and stack).
 
-  Interactive install (TTY): Step 1 login manager, Step 2 keyboard (XKB), Step 3 dotfiles.
-  Optional: LGL (linuxgamerlife COPR) is prompted at the end for interactive installs.
-            It can conflict with Hyprland Qt packages; default choice is skip.
+  Interactive install (TTY): Step 1 login manager, Step 2 compositor, Step 3 keyboard (XKB), Step 4 dotfiles.
+  LGL (linuxgamerlife COPR) is disabled by default and never prompted.
+  Use --with-lgl only if you explicitly want it.
   Non-interactive: use the flags below.
 
   Shared stack: waybar, wlogout, kitty, fuzzel, grim, slurp, etc.
@@ -72,8 +71,8 @@ Options:
                      installs if needed with dnf.
   --skip-display-manager
                      Do not check, prompt, or install a display manager.
-  --with-lgl         Enable COPR and install lgl-system-loadout without prompting.
-  --skip-lgl         Skip LGL install without prompting.
+  --with-lgl         Enable COPR and install lgl-system-loadout (no prompt).
+  --skip-lgl         Skip LGL install (default).
   --with-cursor      Install Cursor IDE from official RPM URL without prompting.
   --skip-cursor      Skip Cursor install without prompting.
   --compositor NAME  Choose compositor: hyprland or sway (default: hyprland).
@@ -123,7 +122,7 @@ while [[ $# -gt 0 ]]; do
     --skip-cursor) WANT_CURSOR="no" ;;
     --compositor)
       if [[ -z "${2:-}" ]]; then
-        ui_err "missing name for --compositor (hyprland only)"
+        ui_err "missing name for --compositor (hyprland or sway)"
         exit 1
       fi
       COMPOSITOR_CLI="${2,,}"
@@ -456,6 +455,7 @@ build_system_pkgs_array() {
     thunar firefox
     helium
     swaybg
+    wob
     brightnessctl playerctl
     grim slurp wl-clipboard
     python3-gobject gtk3 gettext
@@ -463,6 +463,7 @@ build_system_pkgs_array() {
   )
   local -a hypr_pkgs=(
     hyprland
+    hyprland-qtutils
     xdg-desktop-portal-hyprland
     xdg-desktop-portal-gtk
     mate-polkit
@@ -676,52 +677,7 @@ ensure_pavucontrol() {
   ui_ok "pavucontrol installed"
 }
 
-ensure_hyprland_qtutils_optional() {
-  [[ "$INSTALL_PKGS" -eq 0 ]] && return 0
-  command -v dnf >/dev/null 2>&1 || return 0
-  if rpm_have hyprland-qtutils; then
-    return 0
-  fi
-  # Optional and non-blocking: qtutils can pull COPR-pinned Qt deps; skip quietly on Hyprland COPR path.
-  if [[ "$DO_DNF_HYPR" -eq 1 ]]; then
-    return 0
-  fi
-  if [[ "$DRY_RUN" -eq 1 ]]; then
-    printf '%s[dry-run]%s would: sudo dnf install -y --skip-broken hyprland-qtutils\n' "$UI_YLW" "$UI_R"
-    return 0
-  fi
-  ui_section "Optional — hyprland-qtutils"
-  printf '%s · %sInstalling optional Hyprland Qt helpers (non-blocking)…%s\n' "$UI_CYN" "$UI_DIM" "$UI_R"
-  if run sudo dnf install -y --skip-broken hyprland-qtutils; then
-    if rpm_have hyprland-qtutils; then
-      ui_ok "hyprland-qtutils installed"
-      return 0
-    fi
-  fi
-  return 0
-}
-
 ensure_lgl_system_loadout() {
-  if [[ "$WANT_LGL" == "auto" ]]; then
-    if [[ "$INSTALL_PKGS" -eq 1 ]] && [[ -t 0 ]]; then
-      local ans=""
-      printf '\n%s▶ %sOptional — LGL system loadout%s\n' "$UI_MAG" "$UI_BLD" "$UI_R"
-      printf '%s%s%s\n' "$UI_DIM" "$(printf '─%.0s' {1..58})" "$UI_R"
-      printf '%s LGL (%slgl-system-loadout%s) is an optional LinuxGamerLife package set with gaming/system tweaks and helper tools.%s\n' "$UI_R" "$UI_BLD" "$UI_R" "$UI_R"
-      printf '%s Install LGL now?%s\n' "$UI_R" "$UI_R"
-      printf '%s Note: it can conflict with Hyprland COPR packages on Qt6; skipping is safe.%s\n\n' "$UI_DIM" "$UI_R"
-      read -r -p "$(printf '%s▶%s Install LGL now? [y/N]: ' "$UI_CYN" "$UI_R")" ans || true
-      ans="${ans//[[:space:]]/}"
-      ans="${ans,,}"
-      case "${ans:-n}" in
-        y|yes) WANT_LGL="yes" ;;
-        *) WANT_LGL="no" ;;
-      esac
-    else
-      WANT_LGL="no"
-    fi
-  fi
-
   [[ "$WANT_LGL" == "no" ]] && {
     ui_info "skipping LGL. To install later: ./install.sh --with-lgl"
     return 0
@@ -896,10 +852,6 @@ fi
 
 ensure_pavucontrol
 
-if [[ "$CHOSEN_SESSION" == "hyprland" ]]; then
-  ensure_hyprland_qtutils_optional
-fi
-
 install_chosen_display_manager
 
 mkdir_p() {
@@ -982,7 +934,7 @@ if [[ "$DRY_RUN" -eq 0 ]]; then
   run mkdir -p "$WALLPAPER_DIR_RESOLVED"
 fi
 
-ui_section "Step 3/4 — Dotfiles"
+ui_section "Step 4/4 — Dotfiles"
 for name in sway waybar wlogout kitty fuzzel; do
   dest="$CONFIG/$name"
   if [[ -e "$dest" ]]; then

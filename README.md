@@ -78,11 +78,10 @@ That is all you need to start.
 10. Installs Helium browser (Fedora COPR: `v8v88v8v88/helium`).
 11. Adds `linutil` alias in `~/.bashrc` and `~/.zshrc`:
     - `linutil` -> `curl -fsSL https://christitus.com/linux | sh`
-12. Optional prompts:
-    - LGL (`lgl-system-loadout`) — default **No**
+12. Optional prompt:
     - Cursor IDE from official RPM URL — default **No**
 13. On first Hyprland login:
-   - opens LGL once **only if** you installed it (end prompt, `--with-lgl`, or manual `dnf install`), or
+   - opens LGL once **only if** you installed it (`--with-lgl` or manual `dnf install`), or
    - shows a welcome notification with keybinds.
 
 ### Wallpaper support
@@ -92,6 +91,7 @@ Wallpaper scripts are shared and now work in both sessions:
 - **Sway** uses `swaymsg output * bg ...`
 - **Hyprland** uses `swaybg` backend
 - `SUPER + W` (picker) and `SUPER + Shift + W` (random) work in both
+- Volume keys show an OSD bar via `wob` in both sessions
 
 ## Safe DNF Behavior (Built In)
 
@@ -130,6 +130,10 @@ Also includes useful media/hardware keys:
 - mic mute
 - brightness up/down
 - media play/next/prev
+
+Volume OSD is handled by:
+
+- `~/.config/sway/volume-osd.sh`
 
 ## After Install
 
@@ -188,13 +192,13 @@ Choose compositor non-interactively:
 
 ### “Missing hyprland-qtutils” (or error at Hyprland login)
 
-Install the Qt helpers Hyprland expects on Fedora, then log in again:
+`hyprland-qtutils` is now part of the normal Hyprland package install path.
+
+If your package install was skipped (`--no-packages`) or failed, install it manually:
 
 ```bash
 sudo dnf install -y hyprland-qtutils
 ```
-
-The installer tries this package as an optional step when it is safe to do so; if install fails, use the command above.
 
 ### Wallpaper folder mismatch (`Wallpapers` vs `wallpapers`)
 
@@ -214,10 +218,9 @@ mv ~/Pictures/Wallpapers ~/Pictures/wallpapers
 
 **LGL** (linuxgamerlife COPR) and **Hyprland** (solopasha COPR) often want **different Qt6** versions. The installer **skips LGL by default** so you should not see this during a normal `./install.sh`.
 
-**If you choose LGL in the end prompt (or use `--with-lgl`) and `dnf` conflicts:**
+**If you choose LGL with `--with-lgl` and `dnf` conflicts:**
 
 - **You do not need LGL** for Hyprland. Use the dotfiles install without it.
-- Installer now auto-skips known `hyprland-qt-support` conflict cases to avoid breaking the run.
 - Optional: align packages, then retry:
 
 ```bash

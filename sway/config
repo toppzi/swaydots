@@ -241,6 +241,17 @@ mode "resize" {
 }
 bindsym $mod+r mode "resize"
 
+# Media / hardware keys
+bindsym XF86AudioRaiseVolume exec $HOME/.config/sway/volume-osd.sh up
+bindsym XF86AudioLowerVolume exec $HOME/.config/sway/volume-osd.sh down
+bindsym XF86AudioMute exec $HOME/.config/sway/volume-osd.sh mute
+bindsym XF86AudioMicMute exec wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle
+bindsym XF86MonBrightnessUp exec brightnessctl set +10%
+bindsym XF86MonBrightnessDown exec brightnessctl set 10%-
+bindsym XF86AudioPlay exec playerctl play-pause
+bindsym XF86AudioNext exec playerctl next
+bindsym XF86AudioPrev exec playerctl previous
+
 # Include configs from 3 locations:
 #  - /usr/share/sway/config.d
 #  - /etc/sway/config.d
