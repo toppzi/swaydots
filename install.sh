@@ -513,7 +513,7 @@ build_system_pkgs_array() {
     dnf-plugins-core
     waybar wlogout
     kitty fuzzel btop
-    thunar firefox
+    thunar
     helium
     swaybg
     wob

@@ -2,6 +2,8 @@
 
 Simple guided installer for **Hyprland or Sway** on **Fedora**.
 
+This project is meant to be a **minimal installation baseline for a fresh Fedora install**.
+
 This repo helps you get a working Wayland desktop quickly with:
 
 - Hyprland or Sway (you choose)
@@ -32,7 +34,7 @@ After it finishes, **reboot** and pick the session you installed (**Hyprland** o
 
 ## Who This Is For
 
-- You are on Fedora (fresh install is fine).
+- You are on a fresh Fedora install.
 - You want a guided install script.
 - You want sane defaults and working keybinds.
 - You want one setup that supports both Sway and Hyprland.
@@ -235,5 +237,5 @@ Then run installer again.
 
 ## Notes
 
-- This project is focused on **Fedora + Wayland (Hyprland/Sway)**.
+- This project is focused on a **minimal Fedora + Wayland (Hyprland/Sway)** baseline.
 - The `sway/` folder contains shared scripts/themes used by both sessions.

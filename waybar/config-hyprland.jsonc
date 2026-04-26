@@ -5,6 +5,7 @@
     "spacing": 4,
     "modules-left": [
         "hyprland/workspaces",
+        "custom/media",
         "hyprland/submap"
     ],
     "modules-center": [
@@ -149,15 +150,16 @@
         "on-click": "pavucontrol"
     },
     "custom/media": {
-        "format": "{icon} {text}",
+        "format": "{text}",
         "return-type": "json",
-        "max-length": 40,
-        "format-icons": {
-            "spotify": "",
-            "default": "🎜"
-        },
+        "max-length": 48,
         "escape": true,
-        "exec": "$HOME/.config/waybar/mediaplayer.py 2> /dev/null"
+        "exec": "python3 $HOME/.config/waybar/mediaplayer.py 2> /dev/null",
+        "interval": 2,
+        "on-click": "playerctl play-pause",
+        "on-click-right": "playerctl stop",
+        "on-scroll-up": "playerctl next",
+        "on-scroll-down": "playerctl previous"
     },
     "custom/power": {
         "format": "⏻",
