@@ -1,0 +1,24 @@
+/* Minimal style override (layout only) */
+#clock,
+#battery,
+#cpu,
+#memory,
+#disk,
+#temperature,
+#backlight,
+#network,
+#pulseaudio,
+#wireplumber,
+#custom-media,
+#tray,
+#mode,
+#idle_inhibitor,
+#scratchpad,
+#power-profiles-daemon,
+#custom-power,
+#mpd,
+#language,
+#keyboard-state {
+  border-radius: 4px;
+  padding: 0 8px;
+}

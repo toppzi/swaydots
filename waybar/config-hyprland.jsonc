@@ -152,7 +152,7 @@
     "custom/media": {
         "format": "{text}",
         "return-type": "json",
-        "max-length": 48,
+        "max-length": 40,
         "escape": true,
         "exec": "python3 $HOME/.config/waybar/mediaplayer.py 2> /dev/null",
         "interval": 2,

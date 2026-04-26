@@ -1,0 +1,31 @@
+/* Mono style override (layout only) */
+* {
+  font-size: 12px;
+}
+#clock,
+#battery,
+#cpu,
+#memory,
+#disk,
+#temperature,
+#backlight,
+#network,
+#pulseaudio,
+#wireplumber,
+#custom-media,
+#tray,
+#mode,
+#idle_inhibitor,
+#scratchpad,
+#power-profiles-daemon,
+#custom-power,
+#mpd,
+#language,
+#keyboard-state {
+  border-radius: 0;
+  padding: 0 6px;
+}
+#workspaces button {
+  border-radius: 0;
+  padding: 0 6px;
+}

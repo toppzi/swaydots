@@ -3,43 +3,28 @@ import json
 import subprocess
 
 
-def run_playerctl(*args):
+def run(cmd):
     try:
-        out = subprocess.check_output(["playerctl", *args], stderr=subprocess.DEVNULL)
-        return out.decode("utf-8").strip()
+        return subprocess.check_output(cmd, text=True, stderr=subprocess.DEVNULL).strip()
     except Exception:
         return ""
 
 
-def main():
-    status = run_playerctl("status")
-    if status not in {"Playing", "Paused"}:
-        print(json.dumps({"text": "", "class": "hidden", "alt": "hidden", "tooltip": ""}))
-        return
+status = run(["playerctl", "status"])
+title = run(["playerctl", "metadata", "--format", "{{ title }}"])
+artist = run(["playerctl", "metadata", "--format", "{{ artist }}"])
 
-    artist = run_playerctl("metadata", "artist")
-    title = run_playerctl("metadata", "title")
-    player = run_playerctl("metadata", "playerName")
+if status not in {"Playing", "Paused"}:
+    print(json.dumps({"text": "", "class": "hidden", "tooltip": ""}))
+    raise SystemExit(0)
 
-    icon = "▶" if status == "Playing" else "⏸"
-    bars = "▮▯▮▯" if status == "Playing" else "▯▯▯▯"
+icon = "▶" if status == "Paused" else "⏸"
+bars = "▮▯▮▯"
+meta = " - ".join(x for x in [artist, title] if x).strip()
+if not meta:
+    meta = "Media"
+if len(meta) > 44:
+    meta = meta[:41] + "..."
 
-    parts = []
-    if artist:
-        parts.append(artist)
-    if title:
-        parts.append(title)
-    track = " - ".join(parts) if parts else "Unknown"
-    text = f"│ {bars} {icon} {track}"
-
-    payload = {
-        "text": text,
-        "alt": status.lower(),
-        "class": status.lower(),
-        "tooltip": f"{player or 'playerctl'}\n{track}\n{status}",
-    }
-    print(json.dumps(payload))
-
-
-if __name__ == "__main__":
-    main()
+text = f"{bars} │ {icon} {meta}"
+print(json.dumps({"text": text, "class": "custom-media", "tooltip": meta}))

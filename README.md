@@ -1,241 +1,151 @@
-# swaydots (Fedora + Hyprland / Sway)
+# swaydots (Fedora + Hyprland)
 
-Simple guided installer for **Hyprland or Sway** on **Fedora**.
+Minimal dotfiles installer for a **fresh Fedora install** with a Hyprland-focused setup.
 
-This project is meant to be a **minimal installation baseline for a fresh Fedora install**.
+## What You Get
 
-This repo helps you get a working Wayland desktop quickly with:
+- Hyprland-focused install flow
+- Waybar + style picker presets
+- Kitty + Fuzzel + wlogout
+- Wallpaper picker + randomizer + restore on login
+- Theme switcher (Waybar/Kitty/Fuzzel/GTK)
+- Helium browser install (COPR) + theme-aware launcher
 
-- Hyprland or Sway (you choose)
-- Waybar
-- Kitty
-- Fuzzel
-- wlogout
-- Wallpaper scripts/picker
-- Theme switcher
+## Quick Install
 
-## Copy-paste install (one line)
-
-Paste this into **Terminal** on Fedora, press **Enter**, type your password when `sudo` asks, then follow the installer prompts.
-
-**If `git` is already installed:**
+If `git` is already installed:
 
 ```bash
 git clone https://github.com/toppzi/swaydots.git ~/swaydots && cd ~/swaydots && chmod +x install.sh && ./install.sh
 ```
 
-**Fresh Fedora (installs `git` first, then runs the installer):**
+Fresh Fedora (installs `git` first):
 
 ```bash
 sudo dnf install -y git && git clone https://github.com/toppzi/swaydots.git ~/swaydots && cd ~/swaydots && chmod +x install.sh && ./install.sh
 ```
 
-After it finishes, **reboot** and pick the session you installed (**Hyprland** or **Sway**) at the login screen.
+## Installer Flow (`install.sh`)
 
-## Who This Is For
+Current interactive steps:
 
-- You are on a fresh Fedora install.
-- You want a guided install script.
-- You want sane defaults and working keybinds.
-- You want one setup that supports both Sway and Hyprland.
+1. **Step 1/3**: choose login manager (`sddm` / `lightdm`) or skip
+2. **Step 2/3**: choose keyboard layout (XKB)
+3. **Step 3/3**: install/copy dotfiles
 
-## Quick Install (Beginner Friendly)
+### Keyboard layout improvements
 
-Open Terminal and run:
+Layout input supports:
 
-```bash
-cd ~/Downloads
-git clone https://github.com/toppzi/swaydots.git
-cd swaydots
-chmod +x install.sh
-./install.sh
-```
+- number (menu index)
+- layout code (example: `us`, `de`, `gb`)
+- language name search (example: `swedish`, `german`, `span`)
 
-That is all you need to start.
+Supported layout codes:
 
-## What the Installer Does
+`se us gb no fi fr dk de es it pt nl pl cz sk hu ro tr ru ua`
 
-`install.sh` does this automatically:
+## Browser (Helium)
 
-1. Installs missing dependencies with `dnf` (safe retry pattern included).
-2. Lets you choose login manager:
-   - `sddm`
-   - `lightdm`
-3. Lets you choose compositor/session:
-   - `hyprland`
-   - `sway`
-4. Lets you choose keyboard layout:
-   - `se`, `us`, `no`, `fi`, `fr`, `dk`, `gb`
-5. Sets keyboard layout in the installed config(s).
-6. Copies configs to your home:
-   - `~/.config/hypr`
-   - `~/.config/waybar`
-   - `~/.config/kitty`
-   - `~/.config/fuzzel`
-   - `~/.config/wlogout`
-7. Sets wallpaper directory automatically to:
-   - `~/Pictures/wallpapers`
-8. Creates that wallpaper folder if it does not exist.
-9. Installs and enables one selected login manager (unless skipped).
-10. Installs Helium browser (Fedora COPR: `v8v88v8v88/helium`).
-11. Adds `linutil` alias in `~/.bashrc` and `~/.zshrc`:
-    - `linutil` -> `curl -fsSL https://christitus.com/linux | sh`
-12. Optional prompt:
-    - Cursor IDE from official RPM URL — default **No**
-13. On first Hyprland login:
-   - shows a one-time welcome notification with keybinds.
+- Helium COPR is enabled during install: `v8v88v8v88/helium`
+- Browser keybind (`SUPER + B`) launches:
+  - `~/.config/sway/helium-theme-launch.sh`
+- Launcher reads active theme and toggles browser dark/light flags.
 
-### Wallpaper support
+## Cursor IDE
 
-Wallpaper scripts are shared and now work in both sessions:
-
-- **Sway** uses `swaymsg output * bg ...`
-- **Hyprland** uses `swaybg` backend
-- `SUPER + W` (picker) and `SUPER + Shift + W` (random) work in both
-- Volume keys show an OSD bar via `wob` in both sessions
-
-## Safe DNF Behavior (Built In)
-
-The installer already follows a safer install flow:
-
-1. `dnf makecache --refresh`
-2. `dnf install ...`
-3. If failed:
-   - `dnf clean metadata`
-   - `dnf makecache --refresh`
-   - retry install once
-4. If Hyprland package is still unavailable on Fedora:
-   - enable COPR `solopasha/hyprland`
-   - refresh + retry
-
-The installer also enables Helium COPR before package install:
-
-- `v8v88v8v88/helium`
-
-## Default Keybinds
-
-Important defaults:
-
-- `SUPER + Q` -> kill focused app
-- `SUPER + Return` -> open terminal
-- `SUPER + B` -> open browser
-- `SUPER + E` -> open file manager
-- `SUPER + A` -> launcher (fuzzel)
-- `SUPER + W` -> wallpaper picker
-- `SUPER + Shift + T` -> theme switcher
-- `SUPER + Shift + E` -> power menu (wlogout)
-
-Also includes useful media/hardware keys:
-
-- volume up/down/mute
-- mic mute
-- brightness up/down
-- media play/next/prev
-
-Volume OSD is handled by:
-
-- `~/.config/sway/volume-osd.sh`
-
-## After Install
-
-1. Reboot (recommended) or log out.
-2. At login screen, choose the installed session (**Hyprland** or **Sway**).
-3. Log in.
-4. On first Hyprland login, you get a short one-time welcome notification.
-
-## Useful Commands
-
-Run installer again safely:
-
-```bash
-cd ~/Downloads/swaydots
-./install.sh
-```
-
-Dry run (show actions only):
-
-```bash
-./install.sh --dry-run
-```
-
-Help:
-
-```bash
-./install.sh --help
-```
-
-Install **Cursor** without prompt:
+- No interactive prompt in installer.
+- Installs **only** if you pass:
 
 ```bash
 ./install.sh --with-cursor
 ```
 
-Skip Cursor prompt:
+## Waybar
+
+### Style picker
+
+- Keybind: `SUPER + Shift + G`
+- Script: `~/.config/sway/waybar-style-picker.sh`
+- Presets: `default`, `restore-last`, `minimal`, `glass`, `macios`, `windows`, `sleek`, `chiclets`, `split`, `mono`, `dense`
+- Picker applies layout changes robustly (including mixed session config states).
+
+### Media module
+
+- Configured as `custom/media`
+- Script: `~/.config/waybar/mediaplayer.py`
+- Hidden automatically when no player is active
+- Player controls:
+  - left click = play/pause
+  - right click = stop
+  - scroll = next/previous
+
+## Wallpaper
+
+- Default folder: `~/Pictures/wallpapers`
+- Picker: `SUPER + W`
+- Random wallpaper: `SUPER + Shift + W`
+- Last selected wallpaper restores on login/reload
+
+## Useful Commands
+
+Run installer:
 
 ```bash
-./install.sh --skip-cursor
+cd ~/swaydots
+./install.sh
 ```
 
-Choose compositor non-interactively:
+Dry run:
 
 ```bash
-./install.sh --compositor hyprland
-./install.sh --compositor sway
+./install.sh --dry-run
 ```
 
-Use Linutil (Chris Titus Tech Linux Toolbox):
+Skip package install:
 
 ```bash
-linutil
+./install.sh --no-packages
 ```
 
-The installer creates this alias for you:
+Set keyboard non-interactively:
 
 ```bash
-alias linutil='curl -fsSL https://christitus.com/linux | sh'
+./install.sh --keyboard-layout de
+./install.sh --keyboard-layout swedish
 ```
 
-Official Linutil project:
-
-- [ChrisTitusTech/linutil](https://github.com/ChrisTitusTech/linutil)
-
-## Common Problems
-
-### “Missing hyprland-qtutils” (or error at Hyprland login)
-
-`hyprland-qtutils` is now part of the normal Hyprland package install path.
-
-If your package install was skipped (`--no-packages`) or failed, install it manually:
+Install Cursor explicitly:
 
 ```bash
-sudo dnf install -y hyprland-qtutils
+./install.sh --with-cursor
 ```
 
-### Wallpaper folder mismatch (`Wallpapers` vs `wallpapers`)
+## Common Issues
 
-Current default is:
+### `hyprland-qtutils` dependency conflict on Fedora 43
+
+This package may break due to Qt ABI mismatch from mixed repos/COPR.  
+Installer does **not** require it in base flow.
+
+### Waybar styles not visibly changing
+
+Use `SUPER + Shift + G`, then switch between strongly different presets (`minimal`, `dense`, `windows`).  
+If needed, reload Hyprland:
 
 ```bash
-~/Pictures/wallpapers
+hyprctl reload
 ```
 
-If you still have an old uppercase folder from earlier versions, migrate once:
+### Wallpaper folder case mismatch from older versions
+
+Use lowercase folder:
 
 ```bash
 mv ~/Pictures/Wallpapers ~/Pictures/wallpapers
 ```
 
-If package download fails (librepo/dnf errors), run:
-
-```bash
-sudo dnf clean all
-sudo dnf makecache --refresh
-sudo dnf distro-sync --refresh -y
-```
-
-Then run installer again.
-
 ## Notes
 
-- This project is focused on a **minimal Fedora + Wayland (Hyprland/Sway)** baseline.
-- The `sway/` folder contains shared scripts/themes used by both sessions.
+- Project is now **Hyprland-focused** in installer behavior.
+- The `sway/` directory still contains shared scripts used by the setup.

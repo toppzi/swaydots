@@ -1,0 +1,34 @@
+/* Dense style override (layout only) */
+window#waybar {
+  min-height: 26px;
+}
+#clock,
+#battery,
+#cpu,
+#memory,
+#disk,
+#temperature,
+#backlight,
+#network,
+#pulseaudio,
+#wireplumber,
+#custom-media,
+#tray,
+#mode,
+#idle_inhibitor,
+#scratchpad,
+#power-profiles-daemon,
+#custom-power,
+#mpd,
+#language,
+#keyboard-state {
+  margin-top: 1px;
+  margin-bottom: 1px;
+  padding: 0 5px;
+  border-radius: 5px;
+}
+#workspaces button {
+  margin: 1px 1px;
+  padding: 0 5px;
+  border-radius: 5px;
+}

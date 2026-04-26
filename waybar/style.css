@@ -13,16 +13,6 @@ window#waybar {
     transition-duration: 0.3s;
 }
 
-/* Keep every module strictly inside bar height. */
-window#waybar box,
-window#waybar widget,
-window#waybar label,
-window#waybar image {
-    margin-top: 0;
-    margin-bottom: 0;
-    min-height: 0;
-}
-
 window#waybar.hidden {
     opacity: 0.2;
 }
@@ -49,10 +39,8 @@ button:hover {
 
 #workspaces button {
     padding: 0 5px;
-    margin: 0;
     background-color: transparent;
     color: #cdd6f4;
-    min-height: 0;
 }
 
 #workspaces button:hover {
@@ -67,12 +55,6 @@ button:hover {
 #workspaces button.urgent {
     background-color: #f38ba8;
     color: #1e1e2e;
-}
-
-#workspaces button label {
-    margin: 0;
-    padding: 0;
-    line-height: 1;
 }
 
 #mode {
@@ -182,31 +164,12 @@ label:focus {
 
 #custom-media {
     min-width: 100px;
-    background-color: transparent;
-    color: #cdd6f4;
-    padding: 0 6px;
-    margin: 0;
-    line-height: 1;
-    min-height: 0;
-}
-
-#custom-media.hidden {
-    min-width: 0;
-    padding: 0;
-    margin: 0;
-    background-color: transparent;
-    color: transparent;
 }
 
 #custom-media.custom-spotify,
 #custom-media.custom-vlc {
-    background-color: transparent;
+    background-color: #313244;
     color: #cdd6f4;
-}
-
-#custom-media label {
-    margin: 0;
-    padding: 0;
 }
 
 #temperature.critical {

@@ -16,7 +16,7 @@ set $right l
 # Your preferred terminal emulator
 # Recommends: foot
 set $term kitty
-set $browser helium
+set $browser /bin/bash $HOME/.config/sway/helium-theme-launch.sh
 set $filemanager thunar
 # Your preferred application launcher
 # Note: pass the final command to swaymsg so that the resulting window can be opened
@@ -105,6 +105,8 @@ smart_gaps off
 
     # Theme switcher (Sway, Waybar, Kitty, Fuzzel, GTK/Thunar)
     bindsym $mod+Shift+t exec /bin/bash $HOME/.config/sway/theme-switch.sh
+    # Waybar style picker
+    bindsym $mod+Shift+g exec /bin/bash $HOME/.config/sway/waybar-style-picker.sh
 
     # Applications
     bindsym $mod+b exec $browser

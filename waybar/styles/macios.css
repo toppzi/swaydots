@@ -1,0 +1,28 @@
+/* Macios style override (layout only) */
+#window {
+  margin-left: 10px;
+  margin-right: 10px;
+}
+#clock,
+#battery,
+#cpu,
+#memory,
+#disk,
+#temperature,
+#backlight,
+#network,
+#pulseaudio,
+#wireplumber,
+#custom-media,
+#tray,
+#mode,
+#idle_inhibitor,
+#scratchpad,
+#power-profiles-daemon,
+#custom-power,
+#mpd,
+#language,
+#keyboard-state {
+  border-radius: 999px;
+  padding: 0 9px;
+}
