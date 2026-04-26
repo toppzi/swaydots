@@ -17,6 +17,7 @@ DO_DNF_HYPR=0
 # Fedora Hyprland from COPR + full walkthrough (netinstall / COPR enable):
 URL_FEDORA_HYPR_TUTORIAL="https://discussion.fedoraproject.org/t/tutorial-fedora-43-install-hyprland-from-scratch/168386"
 HYPR_FEDORA_COPR_MAIN="solopasha/hyprland"
+HYPR_FEDORA_COPR_BACKUP="ashbuk/Hyprland-Fedora"
 HELIUM_FEDORA_COPR="v8v88v8v88/helium"
 CURSOR_RPM_URL="https://api2.cursor.sh/updates/download/golden/linux-x64-rpm/cursor/3.2"
 
@@ -473,8 +474,10 @@ choose_compositor_if_needed() {
   fi
   [[ "$has_h" -eq 0 ]] && DO_DNF_HYPR=1
   if [[ "$DO_DNF_HYPR" -eq 1 ]] && [[ "$INSTALL_PKGS" -eq 1 ]] && ! command -v dnf >/dev/null 2>&1; then
-    ui_err "hyprland install path requires dnf (not found in PATH)"
-    exit 1
+    ui_warn "dnf not found in PATH; skipping package install and proceeding with dotfiles only"
+    ui_warn "install hyprland manually with your distro package manager, then log in to a Hyprland session"
+    INSTALL_PKGS=0
+    DO_DNF_HYPR=0
   fi
   if [[ ! -d "$SCRIPT_DIR/hypr" ]]; then
     ui_err "missing directory: $SCRIPT_DIR/hypr"
@@ -519,6 +522,8 @@ verify_chosen_compositor_installed() {
   if [[ "$DO_DNF_HYPR" -eq 1 ]] && ! rpm_have hyprland; then
     ui_err "hyprland did not install — check dnf errors above."
     printf '%s  Fedora: sudo dnf copr enable %s && sudo dnf install hyprland%s\n' "$UI_DIM" "$HYPR_FEDORA_COPR_MAIN" "$UI_R" >&2
+    printf '%s  Backup: sudo dnf copr enable %s && sudo dnf install hyprland%s\n' "$UI_DIM" "$HYPR_FEDORA_COPR_BACKUP" "$UI_R" >&2
+    printf '%s  Screen sharing: sudo dnf install xdg-desktop-portal-hyprland%s\n' "$UI_DIM" "$UI_R" >&2
     printf '%s  Walkthrough: %s%s\n' "$UI_DIM" "$URL_FEDORA_HYPR_TUTORIAL" "$UI_R" >&2
     exit 1
   fi
@@ -540,9 +545,15 @@ dnf_install_system_packages() {
     return 0
   fi
   if [[ "$DO_DNF_HYPR" -eq 1 ]] && rpm -q fedora-release &>/dev/null; then
-    ui_warn "dnf failed — Hyprland on Fedora is often packaged via COPR ($HYPR_FEDORA_COPR_MAIN); see $URL_FEDORA_HYPR_TUTORIAL"
+    ui_warn "dnf failed — Hyprland on Fedora is often packaged via COPR; see $URL_FEDORA_HYPR_TUTORIAL"
     ui_warn "Enabling COPR $HYPR_FEDORA_COPR_MAIN and retrying install…"
     run sudo dnf copr enable -y "$HYPR_FEDORA_COPR_MAIN"
+    run sudo dnf makecache --refresh
+    if run sudo dnf install -y --skip-unavailable --skip-broken "$@"; then
+      return 0
+    fi
+    ui_warn "Primary COPR retry failed — enabling backup COPR $HYPR_FEDORA_COPR_BACKUP and retrying…"
+    run sudo dnf copr enable -y "$HYPR_FEDORA_COPR_BACKUP"
     run sudo dnf makecache --refresh
     if run sudo dnf install -y --skip-unavailable --skip-broken "$@"; then
       return 0
