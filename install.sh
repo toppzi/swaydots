@@ -256,55 +256,131 @@ validate_xkb_layout_string() {
   [[ "$1" =~ ^[a-zA-Z0-9_,-]+$ ]]
 }
 
+KEYBOARD_LAYOUT_OPTIONS=(
+  "se:Swedish"
+  "us:US English"
+  "gb:British English"
+  "no:Norwegian"
+  "fi:Finnish"
+  "fr:French"
+  "dk:Danish"
+  "de:German"
+  "es:Spanish"
+  "it:Italian"
+  "pt:Portuguese"
+  "nl:Dutch"
+  "pl:Polish"
+  "cz:Czech"
+  "sk:Slovak"
+  "hu:Hungarian"
+  "ro:Romanian"
+  "tr:Turkish"
+  "ru:Russian"
+  "ua:Ukrainian"
+)
+
+layout_name_for_code() {
+  local code="$1" item
+  for item in "${KEYBOARD_LAYOUT_OPTIONS[@]}"; do
+    if [[ "${item%%:*}" == "$code" ]]; then
+      printf '%s' "${item#*:}"
+      return 0
+    fi
+  done
+  printf '%s' "$code"
+}
+
+find_layout_by_query() {
+  local q="$1" item code name q_norm name_norm
+  q_norm="$(normalize_keyboard_layout_token "$q")"
+  q_norm="$(apply_keyboard_layout_aliases "$q_norm")"
+  [[ -z "$q_norm" ]] && return 1
+
+  # Exact code match first.
+  for item in "${KEYBOARD_LAYOUT_OPTIONS[@]}"; do
+    code="${item%%:*}"
+    if [[ "$q_norm" == "$code" ]]; then
+      printf '%s' "$code"
+      return 0
+    fi
+  done
+
+  # Substring match on language name (must be unique).
+  local matched=""
+  local hits=0
+  for item in "${KEYBOARD_LAYOUT_OPTIONS[@]}"; do
+    code="${item%%:*}"
+    name="${item#*:}"
+    name_norm="$(normalize_keyboard_layout_token "$name")"
+    if [[ "$name_norm" == *"$q_norm"* ]]; then
+      matched="$code"
+      hits=$((hits + 1))
+    fi
+  done
+  if [[ "$hits" -eq 1 ]]; then
+    printf '%s' "$matched"
+    return 0
+  fi
+  return 1
+}
+
 prompt_keyboard_layout() {
   local choice=""
+  local item code name idx
   while true; do
     {
       printf '\n%s▶ %sStep 3/4 — Keyboard layout (XKB)%s\n' "$UI_MAG" "$UI_BLD" "$UI_R"
       printf '%s%s%s\n' "$UI_DIM" "$(printf '─%.0s' {1..58})" "$UI_R"
       printf '%s Choose keyboard layout for %s:%s\n' "$UI_R" "$CHOSEN_SESSION" "$UI_R"
-      printf '%s   %s1=se  2=us  3=no  4=fi  5=fr  6=dk  7=gb%s\n\n' "$UI_BLD" "$UI_CYN" "$UI_R"
-      printf '   %s1)%s se     %s·%s Swedish\n' "$UI_CYN" "$UI_R" "$UI_DIM" "$UI_R"
-      printf '   %s2)%s us     %s·%s US English\n' "$UI_CYN" "$UI_R" "$UI_DIM" "$UI_R"
-      printf '   %s3)%s no     %s·%s Norwegian\n' "$UI_CYN" "$UI_R" "$UI_DIM" "$UI_R"
-      printf '   %s4)%s fi     %s·%s Finnish\n' "$UI_CYN" "$UI_R" "$UI_DIM" "$UI_R"
-      printf '   %s5)%s fr     %s·%s French\n' "$UI_CYN" "$UI_R" "$UI_DIM" "$UI_R"
-      printf '   %s6)%s dk     %s·%s Danish\n' "$UI_CYN" "$UI_R" "$UI_DIM" "$UI_R"
-      printf '   %s7)%s gb     %s·%s British English\n\n' "$UI_CYN" "$UI_R" "$UI_DIM" "$UI_R"
+      printf '%s You can type:%s\n' "$UI_R" "$UI_R"
+      printf '   %s- number%s (e.g. 1)\n' "$UI_CYN" "$UI_R"
+      printf '   %s- layout code%s (e.g. us, de, gb)\n' "$UI_CYN" "$UI_R"
+      printf '   %s- language name/search%s (e.g. swedish, german, span)\n\n' "$UI_CYN" "$UI_R"
+      idx=1
+      for item in "${KEYBOARD_LAYOUT_OPTIONS[@]}"; do
+        code="${item%%:*}"
+        name="${item#*:}"
+        printf '   %s%2d)%s %-5s  %s·%s %s\n' "$UI_CYN" "$idx" "$UI_R" "$code" "$UI_DIM" "$UI_R" "$name"
+        idx=$((idx + 1))
+      done
+      printf '\n'
     } >&2
-    read -r -p "$(printf '%s▶%s Type 1–7 or Enter for us [2]: ' "$UI_CYN" "$UI_R")" choice || true
+    read -r -p "$(printf '%s▶%s Type number/code/name or Enter for us [2]: ' "$UI_CYN" "$UI_R")" choice || true
     choice="${choice//[[:space:]]/}"
     choice="${choice,,}"
-    case "${choice:-2}" in
-      1|se) printf '%s\n' se; return 0 ;;
-      2|us) printf '%s\n' us; return 0 ;;
-      3|no) printf '%s\n' no; return 0 ;;
-      4|fi) printf '%s\n' fi; return 0 ;;
-      5|fr) printf '%s\n' fr; return 0 ;;
-      6|dk) printf '%s\n' dk; return 0 ;;
-      7|gb|uk) printf '%s\n' gb; return 0 ;;
-      *) ui_warn "invalid choice — use 1=se 2=us 3=no 4=fi 5=fr 6=dk 7=gb" ;;
-    esac
+    choice="${choice:-2}"
+
+    if [[ "$choice" =~ ^[0-9]+$ ]]; then
+      if (( choice >= 1 && choice <= ${#KEYBOARD_LAYOUT_OPTIONS[@]} )); then
+        item="${KEYBOARD_LAYOUT_OPTIONS[$((choice - 1))]}"
+        printf '%s\n' "${item%%:*}"
+        return 0
+      fi
+    fi
+
+    if code="$(find_layout_by_query "$choice")"; then
+      printf '%s\n' "$code"
+      return 0
+    fi
+
+    ui_warn "invalid/ambiguous choice — type a number, layout code, or language name"
   done
 }
 
 resolve_keyboard_layout() {
-  local raw="" out=""
+  local raw="" out="" matched_code=""
   if [[ -n "$KEYBOARD_LAYOUT_CLI" ]]; then
     raw="$(normalize_keyboard_layout_token "$KEYBOARD_LAYOUT_CLI")"
     raw="$(apply_keyboard_layout_aliases "$raw")"
-    case "$raw" in
-      se|us|no|fi|fr|dk|gb) ;;
-      *)
-        ui_err "invalid --keyboard-layout (allowed: se, us, no, fi, fr, dk, gb)"
-        exit 1
-        ;;
-    esac
-    if ! validate_xkb_layout_string "$raw"; then
+    if ! matched_code="$(find_layout_by_query "$raw")"; then
+      ui_err "invalid --keyboard-layout (use code or language, e.g. us, de, swedish)"
+      exit 1
+    fi
+    if ! validate_xkb_layout_string "$matched_code"; then
       ui_err "invalid --keyboard-layout token"
       exit 1
     fi
-    printf '%s' "$raw"
+    printf '%s' "$matched_code"
     return 0
   fi
   if [[ -t 0 ]]; then
