@@ -1,5 +1,5 @@
 // -*- mode: jsonc -*-
-// Hyprland session: same as config.jsonc but with hyprland/* modules (Sway uses sway/*).
+// Hyprland session config.
 {
     "height": 30,
     "spacing": 4,

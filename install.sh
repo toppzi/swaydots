@@ -180,7 +180,7 @@ ui_footer() {
   printf '%s│  %s%-52s%s  %s│%s\n' "$UI_GRN" "$UI_R" "$reload_line" "$UI_R" "$UI_GRN" "$UI_R"
   printf '%s│  %s%-52s%s  %s│%s\n' "$UI_GRN" "$UI_R" "$monitor_line" "$UI_R" "$UI_GRN" "$UI_R"
   printf '%s│  %s%-52s%s  %s│%s\n' "$UI_GRN" "$UI_R" "WALLPAPER_DIR: log out/in or import-environment" "$UI_R" "$UI_GRN" "$UI_R"
-  printf '%s│  %s%-52s%s  %s│%s\n' "$UI_GRN" "$UI_DIM" "Theme (Mod+Shift+t): keep sway/themes from repo" "$UI_R" "$UI_GRN" "$UI_R"
+  printf '%s│  %s%-52s%s  %s│%s\n' "$UI_GRN" "$UI_DIM" "Theme (Mod+Shift+t): shared theme files auto-copied" "$UI_R" "$UI_GRN" "$UI_R"
   printf '%s╰%s╯%s\n' "$UI_GRN" "$rule" "$UI_R"
   printf '\n'
 }
@@ -900,21 +900,11 @@ fi
 
 write_keyboard_layout_configs() {
   local layout="$1"
-  local sway_f="$CONFIG/sway/config.d/10-xkb-layout.conf"
   local hypr_f="$CONFIG/hypr/hyprland.conf"
   if [[ "$DRY_RUN" -eq 1 ]]; then
-    printf '%s[dry-run]%s would write %s (xkb_layout %s)\n' "$UI_YLW" "$UI_R" "$sway_f" "$layout"
     printf '%s[dry-run]%s would set kb_layout = %s in %s\n' "$UI_YLW" "$UI_R" "$layout" "$hypr_f"
     return 0
   fi
-  mkdir_p "$CONFIG/sway/config.d"
-  printf '%s\n' \
-    '# Written by install.sh — keyboard layout (xkb)' \
-    'input type:keyboard {' \
-    "    xkb_layout $layout" \
-    '    xkb_model pc105' \
-    '}' >"$sway_f"
-  ui_ok "keyboard layout → $layout ($sway_f)"
   if [[ -f "$hypr_f" ]]; then
     if grep -qE '^[[:space:]]*kb_layout[[:space:]]*=' "$hypr_f"; then
       local tmp
@@ -967,7 +957,7 @@ if [[ "$DRY_RUN" -eq 0 ]]; then
 fi
 
 ui_section "Step 3/3 — Dotfiles"
-for name in sway waybar wlogout kitty fuzzel; do
+for name in waybar wlogout kitty fuzzel; do
   dest="$CONFIG/$name"
   if [[ -e "$dest" ]]; then
     backup_if_exists "$dest"
@@ -991,7 +981,10 @@ else
   cp -a "$SCRIPT_DIR/kitty" "$CONFIG/"
   cp -a "$SCRIPT_DIR/fuzzel" "$CONFIG/"
   cp -a "$SCRIPT_DIR/hypr" "$CONFIG/"
-  ui_ok "installed sway (scripts/themes), waybar, wlogout, kitty, fuzzel, hypr → $CONFIG"
+  # Remove Sway session configs; keep shared scripts/themes only.
+  rm -f "$CONFIG/sway/config" 2>/dev/null || true
+  rm -rf "$CONFIG/sway/config.d" 2>/dev/null || true
+  ui_ok "installed hypr, waybar, wlogout, kitty, fuzzel (+ shared scripts/themes) → $CONFIG"
 fi
 
 # Waybar: default to Hyprland modules.
