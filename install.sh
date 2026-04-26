@@ -529,14 +529,14 @@ dnf_install_system_packages() {
   # Helium browser is distributed through COPR on Fedora.
   run sudo dnf copr enable -y "$HELIUM_FEDORA_COPR" || true
   run sudo dnf makecache --refresh
-  if run sudo dnf install -y "$@"; then
+  if run sudo dnf install -y --skip-unavailable --skip-broken "$@"; then
     return 0
   fi
   # Safe retry pattern: clear stale metadata and try once more.
   ui_warn "dnf install failed — cleaning metadata and retrying once…"
   run sudo dnf clean metadata
   run sudo dnf makecache --refresh
-  if run sudo dnf install -y "$@"; then
+  if run sudo dnf install -y --skip-unavailable --skip-broken "$@"; then
     return 0
   fi
   if [[ "$DO_DNF_HYPR" -eq 1 ]] && rpm -q fedora-release &>/dev/null; then
@@ -544,12 +544,90 @@ dnf_install_system_packages() {
     ui_warn "Enabling COPR $HYPR_FEDORA_COPR_MAIN and retrying install…"
     run sudo dnf copr enable -y "$HYPR_FEDORA_COPR_MAIN"
     run sudo dnf makecache --refresh
-    if run sudo dnf install -y "$@"; then
+    if run sudo dnf install -y --skip-unavailable --skip-broken "$@"; then
       return 0
     fi
   fi
   ui_err "dnf install failed — see output above"
   return 1
+}
+
+ensure_bibata_cursor_theme() {
+  [[ "$INSTALL_PKGS" -eq 1 ]] || return 0
+  command -v dnf >/dev/null 2>&1 || return 0
+
+  local -a candidates=(
+    bibata-cursor-theme
+    bibata-cursor-themes
+  )
+  local pkg
+
+  for pkg in "${candidates[@]}"; do
+    if rpm_have "$pkg"; then
+      ui_ok "$pkg already installed"
+      return 0
+    fi
+  done
+
+  ui_section "Cursor theme"
+  ui_info "trying to install Bibata Modern Ice cursor theme"
+
+  for pkg in "${candidates[@]}"; do
+    if [[ "$DRY_RUN" -eq 1 ]]; then
+      printf '%s[dry-run]%s would try: sudo dnf install -y --skip-unavailable %s\n' "$UI_YLW" "$UI_R" "$pkg"
+      continue
+    fi
+    if run sudo dnf install -y --skip-unavailable "$pkg"; then
+      ui_ok "installed cursor theme package: $pkg"
+      return 0
+    fi
+  done
+
+  ui_warn "could not find Bibata cursor package in current repositories; trying GitHub release fallback"
+
+  local -a bibata_urls=(
+    "https://github.com/ful1e5/Bibata_Cursor/releases/latest/download/Bibata-Modern-Ice.tar.xz"
+    "https://github.com/ful1e5/Bibata_Cursor/releases/latest/download/Bibata-Modern-Ice.tar.gz"
+  )
+  local tmpd arc url extracted=0
+  tmpd="$(mktemp -d "${TMPDIR:-/tmp}/bibata.XXXXXX")"
+  trap 'rm -rf "$tmpd"' RETURN
+
+  for url in "${bibata_urls[@]}"; do
+    if [[ "$DRY_RUN" -eq 1 ]]; then
+      printf '%s[dry-run]%s would try download/install: %s\n' "$UI_YLW" "$UI_R" "$url"
+      continue
+    fi
+    arc="$tmpd/$(basename "$url")"
+    if command -v curl >/dev/null 2>&1 && curl -fsSL "$url" -o "$arc"; then
+      if tar -xf "$arc" -C "$tmpd" >/dev/null 2>&1; then
+        extracted=1
+        break
+      fi
+    fi
+  done
+
+  if [[ "$DRY_RUN" -eq 1 ]]; then
+    return 0
+  fi
+
+  if [[ "$extracted" -eq 1 ]]; then
+    mkdir -p "$HOME/.local/share/icons"
+    local copied_any=0 d
+    for d in "$tmpd"/Bibata-*Ice*; do
+      if [[ -d "$d" ]]; then
+        rm -rf "$HOME/.local/share/icons/$(basename "$d")"
+        cp -a "$d" "$HOME/.local/share/icons/"
+        copied_any=1
+      fi
+    done
+    if [[ "$copied_any" -eq 1 ]]; then
+      ui_ok "installed Bibata Modern Ice cursor theme to ~/.local/share/icons"
+      return 0
+    fi
+  fi
+
+  ui_warn "Bibata Modern Ice fallback download failed (non-fatal)"
 }
 
 # Step 1/3 — Login manager (order: 1 SDDM, 2 LightDM)
@@ -803,6 +881,8 @@ else
 fi
 
 ensure_pavucontrol
+
+ensure_bibata_cursor_theme
 
 install_chosen_display_manager
 
