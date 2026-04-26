@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Visual wallpaper picker: thumbnail grid from WALLPAPER_DIR, click to apply (swaymsg).
+Visual wallpaper picker: thumbnail grid from WALLPAPER_DIR, click to apply.
 Requires: python3-gobject, gtk3 (Fedora: python3-gobject gtk3).
 
 Thumbnails are cached under $XDG_CACHE_HOME/sway-wallpaper-picker/thumbnails/ so later
@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import hashlib
 import os
+import pathlib
 import subprocess
 import sys
 import tempfile
@@ -44,6 +45,7 @@ STATE_DIR = os.path.join(
     os.environ.get("XDG_STATE_HOME", os.path.expanduser("~/.local/state")), "sway"
 )
 STATE_FILE = os.path.join(STATE_DIR, "last-wallpaper")
+WALLPAPER_SCRIPT = str(pathlib.Path(__file__).resolve().parent / "wallpaper.sh")
 EXT = {".jpg", ".jpeg", ".png", ".webp", ".jxl", ".bmp", ".gif"}
 THUMB_W, THUMB_H = 280, 170
 THUMB_CACHE_VERSION = "1"
@@ -220,9 +222,9 @@ def save_wallpaper_state(path: str, mode: str) -> None:
 
 
 def set_wallpaper(path: str) -> None:
-    esc = path.replace("'", "'\\''")
-    subprocess.run(["swaymsg", f"output * bg '{esc}' {WALLPAPER_MODE}"], check=False)
-    save_wallpaper_state(path, WALLPAPER_MODE)
+    env = os.environ.copy()
+    env["WALLPAPER_MODE"] = WALLPAPER_MODE
+    subprocess.run([WALLPAPER_SCRIPT, path], check=False, env=env)
 
 
 def load_thumb(path: str) -> GdkPixbuf.Pixbuf | None:

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Install Wayland dotfiles (Hyprland session): waybar, wlogout, kitty, fuzzel, theme switcher, wallpaper picker.
+# Install Wayland dotfiles (Hyprland or Sway session): waybar, wlogout, kitty, fuzzel, theme switcher, wallpaper picker.
 # Run from the extracted sway-dotfiles directory: ./install.sh
 set -euo pipefail
 
@@ -14,6 +14,7 @@ SKIP_DISPLAY_MANAGER=0
 # - yes: install (set by --with-lgl)
 # - no: skip (set by --skip-lgl)
 WANT_LGL="auto"
+WANT_CURSOR="auto"
 DISPLAY_MANAGER_CLI=""
 CHOSEN_DM=""
 COMPOSITOR_CLI=""
@@ -22,6 +23,8 @@ DO_DNF_HYPR=0
 # Fedora Hyprland from COPR + full walkthrough (netinstall / COPR enable):
 URL_FEDORA_HYPR_TUTORIAL="https://discussion.fedoraproject.org/t/tutorial-fedora-43-install-hyprland-from-scratch/168386"
 HYPR_FEDORA_COPR_MAIN="solopasha/hyprland"
+HELIUM_FEDORA_COPR="v8v88v8v88/helium"
+CURSOR_RPM_URL="https://api2.cursor.sh/updates/download/golden/linux-x64-rpm/cursor/3.2"
 
 UI_init() {
   if [[ -t 1 && -z "${NO_COLOR:-}" ]]; then
@@ -48,9 +51,9 @@ usage() {
   sed -n '1,135p' <<'EOF'
 Usage: install.sh [options]
 
-  Copies sway/ (scripts, themes, wallpapers), waybar/, wlogout/, kitty/, fuzzel/, and hypr/
+  Copies sway/ (scripts, themes, wallpapers), waybar/, wlogout/, kitty/, fuzzel/, and optionally hypr/
   into ~/.config/, writes WALLPAPER_DIR (systemd user environment.d), sets executable bits,
-  and optionally installs Fedora packages (Hyprland compositor and stack).
+  and optionally installs Fedora packages (Hyprland or Sway compositor and stack).
 
   Interactive install (TTY): Step 1 login manager, Step 2 keyboard (XKB), Step 3 dotfiles.
   Optional: LGL (linuxgamerlife COPR) is prompted at the end for interactive installs.
@@ -71,9 +74,11 @@ Options:
                      Do not check, prompt, or install a display manager.
   --with-lgl         Enable COPR and install lgl-system-loadout without prompting.
   --skip-lgl         Skip LGL install without prompting.
-  --compositor NAME  Must be hyprland (optional; default is Hyprland). Refuses sway.
+  --with-cursor      Install Cursor IDE from official RPM URL without prompting.
+  --skip-cursor      Skip Cursor install without prompting.
+  --compositor NAME  Choose compositor: hyprland or sway (default: hyprland).
   --keyboard-layout CODE
-                     XKB layout for Hyprland (se, us, no, fi, fr, dk, gb). Use gb for UK English.
+                     XKB layout for the selected compositor (se, us, no, fi, fr, dk, gb). Use gb for UK English.
                      Non-interactive; default us if omitted in CI.
   -h, --help         Show this help.
 
@@ -84,6 +89,7 @@ After install:
     or run: systemctl --user import-environment WALLPAPER_DIR  (if your session supports it).
   - If a display manager was installed here, reboot (or start that service) so graphical login uses it.
   - Hyprland: ~/.config/hypr/hyprland.conf (Waybar exec-once). Edit monitors and binds as needed.
+  - Sway: ~/.config/sway/config and ~/.config/sway/config.d/*.conf.
     On Fedora, if hyprland is missing from default repos, the installer may enable COPR
     solopasha/hyprland and retry; see also:
     https://discussion.fedoraproject.org/t/tutorial-fedora-43-install-hyprland-from-scratch/168386
@@ -113,6 +119,8 @@ while [[ $# -gt 0 ]]; do
     --skip-display-manager) SKIP_DISPLAY_MANAGER=1 ;;
     --with-lgl) WANT_LGL="yes" ;;
     --skip-lgl) WANT_LGL="no" ;;
+    --with-cursor) WANT_CURSOR="yes" ;;
+    --skip-cursor) WANT_CURSOR="no" ;;
     --compositor)
       if [[ -z "${2:-}" ]]; then
         ui_err "missing name for --compositor (hyprland only)"
@@ -135,7 +143,7 @@ while [[ $# -gt 0 ]]; do
   shift
 done
 
-for d in sway waybar wlogout kitty fuzzel hypr; do
+for d in sway waybar wlogout kitty fuzzel; do
   if [[ ! -d "$SCRIPT_DIR/$d" ]]; then
     ui_err "missing directory: $SCRIPT_DIR/$d"
     ui_err "run ./pack.sh on your source machine, or extract a complete archive."
@@ -157,10 +165,15 @@ ui_banner() {
   elif [[ "$WANT_LGL" == "no" ]]; then
     mode+="${mode:+ · }skip-lgl"
   fi
+  if [[ "$WANT_CURSOR" == "yes" ]]; then
+    mode+="${mode:+ · }with-cursor"
+  elif [[ "$WANT_CURSOR" == "no" ]]; then
+    mode+="${mode:+ · }skip-cursor"
+  fi
   printf '\n'
   printf '%s╭%s╮%s\n' "$UI_CYN" "$rule" "$UI_R"
   printf '%s│  %s%-52s%s  %s│%s\n' "$UI_CYN" "$UI_BLD" "Wayland dotfiles installer" "$UI_R" "$UI_CYN" "$UI_R"
-  printf '%s│  %s%-52s%s  %s│%s\n' "$UI_CYN" "$UI_DIM" "Hyprland · waybar · kitty · fuzzel · wallpaper" "$UI_R" "$UI_CYN" "$UI_R"
+  printf '%s│  %s%-52s%s  %s│%s\n' "$UI_CYN" "$UI_DIM" "Hyprland/Sway · waybar · kitty · fuzzel · wallpaper" "$UI_R" "$UI_CYN" "$UI_R"
   if [[ -n "$mode" ]]; then
     printf '%s│  %s%-52s%s  %s│%s\n' "$UI_CYN" "$UI_YLW" "$mode" "$UI_R" "$UI_CYN" "$UI_R"
   fi
@@ -188,8 +201,13 @@ ui_warn() {
 ui_footer() {
   local rule reload_line monitor_line
   rule="$(printf '─%.0s' {1..58})"
-  reload_line="Reload Hyprland: hyprctl reload"
-  monitor_line="Monitors: ~/.config/hypr/hyprland.conf"
+  if [[ "$CHOSEN_SESSION" == "sway" ]]; then
+    reload_line="Reload Sway config: swaymsg reload"
+    monitor_line="Edit: ~/.config/sway/config"
+  else
+    reload_line="Reload Hyprland: hyprctl reload"
+    monitor_line="Monitors: ~/.config/hypr/hyprland.conf"
+  fi
   printf '\n'
   printf '%s╭%s╮%s\n' "$UI_GRN" "$rule" "$UI_R"
   printf '%s│  %s%-52s%s  %s│%s\n' "$UI_GRN" "$UI_BLD" "All set — quick reference" "$UI_R" "$UI_GRN" "$UI_R"
@@ -216,7 +234,7 @@ normalize_wallpaper_dir() {
   local raw="$1"
   local p
   if [[ -z "$raw" ]]; then
-    p="${HOME}/Pictures/Wallpapers"
+    p="${HOME}/Pictures/wallpapers"
   else
     p="$(expand_tilde_path "$raw")"
   fi
@@ -228,7 +246,7 @@ normalize_wallpaper_dir() {
 }
 
 resolve_wallpaper_dir() {
-  # Minimal installer default: always use ~/Pictures/Wallpapers unless overridden by flag.
+  # Minimal installer default: always use ~/Pictures/wallpapers unless overridden by flag.
   if [[ -n "$WALLPAPER_DIR_CLI" ]]; then
     normalize_wallpaper_dir "$WALLPAPER_DIR_CLI"
     return
@@ -258,9 +276,9 @@ prompt_keyboard_layout() {
   local choice=""
   while true; do
     {
-      printf '\n%s▶ %sStep 2/4 — Keyboard layout (XKB)%s\n' "$UI_MAG" "$UI_BLD" "$UI_R"
+      printf '\n%s▶ %sStep 3/4 — Keyboard layout (XKB)%s\n' "$UI_MAG" "$UI_BLD" "$UI_R"
       printf '%s%s%s\n' "$UI_DIM" "$(printf '─%.0s' {1..58})" "$UI_R"
-      printf '%s Choose keyboard layout for Hyprland:%s\n' "$UI_R" "$UI_R"
+      printf '%s Choose keyboard layout for %s:%s\n' "$UI_R" "$CHOSEN_SESSION" "$UI_R"
       printf '%s   %s1=se  2=us  3=no  4=fi  5=fr  6=dk  7=gb%s\n\n' "$UI_BLD" "$UI_CYN" "$UI_R"
       printf '   %s1)%s se     %s·%s Swedish\n' "$UI_CYN" "$UI_R" "$UI_DIM" "$UI_R"
       printf '   %s2)%s us     %s·%s US English\n' "$UI_CYN" "$UI_R" "$UI_DIM" "$UI_R"
@@ -354,71 +372,80 @@ normalize_dm_id() {
   esac
 }
 
+prompt_compositor() {
+  local choice=""
+  while true; do
+    {
+      printf '\n%s▶ %sStep 2/4 — Compositor/session%s\n' "$UI_MAG" "$UI_BLD" "$UI_R"
+      printf '%s%s%s\n' "$UI_DIM" "$(printf '─%.0s' {1..58})" "$UI_R"
+      printf '%s Choose which session this installer should configure and install packages for.%s\n' "$UI_R" "$UI_R"
+      printf '%s   %s1=hyprland  2=sway%s\n\n' "$UI_BLD" "$UI_CYN" "$UI_R"
+      printf '   %s1)%s hyprland %s·%s dynamic tiling compositor\n' "$UI_CYN" "$UI_R" "$UI_DIM" "$UI_R"
+      printf '   %s2)%s sway     %s·%s i3-compatible Wayland compositor\n\n' "$UI_CYN" "$UI_R" "$UI_DIM" "$UI_R"
+    } >&2
+    read -r -p "$(printf '%s▶%s Type 1-2, Enter for hyprland [1]: ' "$UI_CYN" "$UI_R")" choice || true
+    choice="${choice//[[:space:]]/}"
+    choice="${choice,,}"
+    case "${choice:-1}" in
+      1|hyprland|hypr) printf '%s\n' hyprland; return 0 ;;
+      2|sway) printf '%s\n' sway; return 0 ;;
+      *) ui_warn "invalid choice — use 1=hyprland or 2=sway" ;;
+    esac
+  done
+}
+
 choose_compositor_if_needed() {
   DO_DNF_HYPR=0
   CHOSEN_SESSION="hyprland"
 
+  local picked=""
   local has_h=0
-  if rpm_have hyprland; then has_h=1; fi
+  local has_s=0
+  rpm_have hyprland && has_h=1
+  rpm_have sway && has_s=1
 
   if [[ -n "$COMPOSITOR_CLI" ]]; then
     case "${COMPOSITOR_CLI}" in
-      sway)
-        ui_err "this installer only supports Hyprland (remove --compositor or use --compositor hyprland)"
-        exit 1
-        ;;
-      hyprland|hypr) ;;
+      hyprland|hypr) picked="hyprland" ;;
+      sway) picked="sway" ;;
       *)
-        ui_err "invalid --compositor (use hyprland)"
+        ui_err "invalid --compositor (use hyprland or sway)"
         exit 1
         ;;
     esac
+  elif [[ "$DRY_RUN" -eq 1 || ! -t 0 ]]; then
+    picked="hyprland"
+  else
+    picked="$(prompt_compositor)"
+  fi
+
+  CHOSEN_SESSION="$picked"
+
+  if [[ "$CHOSEN_SESSION" == "hyprland" ]]; then
     if [[ "$INSTALL_PKGS" -eq 0 ]] && [[ "$has_h" -eq 0 ]]; then
       ui_err "hyprland is not installed; install it first or re-run without --no-packages"
       exit 1
     fi
     [[ "$has_h" -eq 0 ]] && DO_DNF_HYPR=1
-    if [[ "$DO_DNF_HYPR" -eq 1 ]] && ! command -v dnf >/dev/null 2>&1; then
-      ui_err "--compositor install path requires dnf (not found in PATH)"
+    if [[ "$DO_DNF_HYPR" -eq 1 ]] && [[ "$INSTALL_PKGS" -eq 1 ]] && ! command -v dnf >/dev/null 2>&1; then
+      ui_err "hyprland install path requires dnf (not found in PATH)"
       exit 1
     fi
-    return 0
-  fi
-
-  if [[ "$DRY_RUN" -eq 1 ]]; then
-    [[ "$has_h" -eq 0 ]] && DO_DNF_HYPR=1
-    return 0
-  fi
-
-  if [[ ! -t 0 ]]; then
-    if [[ "$INSTALL_PKGS" -eq 0 ]]; then
-      if [[ "$has_h" -eq 0 ]]; then
-        ui_warn "non-interactive: hyprland not installed — install it or pass --compositor hyprland with package install enabled"
-      fi
-      return 0
-    fi
-    if [[ "$has_h" -eq 0 ]]; then
-      if ! command -v dnf >/dev/null 2>&1; then
-        ui_warn "dnf not found — install hyprland with your package manager"
-        return 0
-      fi
-      DO_DNF_HYPR=1
-    fi
-    return 0
-  fi
-
-  if [[ "$INSTALL_PKGS" -eq 0 ]]; then
-    if [[ "$has_h" -eq 0 ]]; then
-      ui_err "Hyprland is not installed — re-run without --no-packages or install hyprland first"
+    if [[ ! -d "$SCRIPT_DIR/hypr" ]]; then
+      ui_err "missing directory: $SCRIPT_DIR/hypr"
+      ui_err "run ./pack.sh on your source machine, or extract a complete archive."
       exit 1
     fi
-    return 0
+  else
+    if [[ "$INSTALL_PKGS" -eq 0 ]] && [[ "$has_s" -eq 0 ]]; then
+      ui_err "sway is not installed; install it first or re-run without --no-packages"
+      exit 1
+    fi
+    if [[ "$INSTALL_PKGS" -eq 1 ]] && [[ "$has_s" -eq 0 ]] && ! command -v dnf >/dev/null 2>&1; then
+      ui_err "sway install path requires dnf (not found in PATH)"
+      exit 1
+    fi
   fi
-  if ! command -v dnf >/dev/null 2>&1; then
-    ui_err "dnf is required to install Hyprland when it is missing (not found in PATH)"
-    exit 1
-  fi
-  [[ "$has_h" -eq 0 ]] && DO_DNF_HYPR=1
 }
 
 build_system_pkgs_array() {
@@ -427,6 +454,8 @@ build_system_pkgs_array() {
     waybar wlogout
     kitty fuzzel btop
     thunar firefox
+    helium
+    swaybg
     brightnessctl playerctl
     grim slurp wl-clipboard
     python3-gobject gtk3 gettext
@@ -440,10 +469,23 @@ build_system_pkgs_array() {
     qt6-qtwayland
     wireplumber
   )
-  if [[ "$DO_DNF_HYPR" -eq 1 ]]; then
-    SYSTEM_PKGS+=("${hypr_pkgs[@]}")
+  local -a sway_pkgs=(
+    sway
+    xdg-desktop-portal-wlr
+    xdg-desktop-portal-gtk
+    swayidle
+    swaylock
+    seatd
+    wireplumber
+  )
+  if [[ "$CHOSEN_SESSION" == "hyprland" ]]; then
+    if [[ "$DO_DNF_HYPR" -eq 1 ]]; then
+      SYSTEM_PKGS+=("${hypr_pkgs[@]}")
+    else
+      SYSTEM_PKGS+=("${hypr_pkgs[@]:1}")
+    fi
   else
-    SYSTEM_PKGS+=("${hypr_pkgs[@]:1}")
+    SYSTEM_PKGS+=("${sway_pkgs[@]}")
   fi
 }
 
@@ -451,16 +493,22 @@ verify_chosen_compositor_installed() {
   [[ "$INSTALL_PKGS" -eq 0 ]] && return 0
   [[ "$DRY_RUN" -eq 1 ]] && return 0
   command -v rpm >/dev/null 2>&1 || return 0
-  if [[ "$DO_DNF_HYPR" -eq 1 ]] && ! rpm_have hyprland; then
+  if [[ "$CHOSEN_SESSION" == "hyprland" ]] && [[ "$DO_DNF_HYPR" -eq 1 ]] && ! rpm_have hyprland; then
     ui_err "hyprland did not install — check dnf errors above."
     printf '%s  Fedora: sudo dnf copr enable %s && sudo dnf install hyprland%s\n' "$UI_DIM" "$HYPR_FEDORA_COPR_MAIN" "$UI_R" >&2
     printf '%s  Walkthrough: %s%s\n' "$UI_DIM" "$URL_FEDORA_HYPR_TUTORIAL" "$UI_R" >&2
+    exit 1
+  fi
+  if [[ "$CHOSEN_SESSION" == "sway" ]] && ! rpm_have sway; then
+    ui_err "sway did not install — check dnf errors above."
     exit 1
   fi
 }
 
 dnf_install_system_packages() {
   # Best-practice preflight: refresh repo metadata before install.
+  # Helium browser is distributed through COPR on Fedora.
+  run sudo dnf copr enable -y "$HELIUM_FEDORA_COPR" || true
   run sudo dnf makecache --refresh
   if run sudo dnf install -y "$@"; then
     return 0
@@ -472,7 +520,7 @@ dnf_install_system_packages() {
   if run sudo dnf install -y "$@"; then
     return 0
   fi
-  if [[ "$DO_DNF_HYPR" -eq 1 ]] && rpm -q fedora-release &>/dev/null; then
+  if [[ "$CHOSEN_SESSION" == "hyprland" ]] && [[ "$DO_DNF_HYPR" -eq 1 ]] && rpm -q fedora-release &>/dev/null; then
     ui_warn "dnf failed — Hyprland on Fedora is often packaged via COPR ($HYPR_FEDORA_COPR_MAIN); see $URL_FEDORA_HYPR_TUTORIAL"
     ui_warn "Enabling COPR $HYPR_FEDORA_COPR_MAIN and retrying install…"
     run sudo dnf copr enable -y "$HYPR_FEDORA_COPR_MAIN"
@@ -717,6 +765,53 @@ ensure_lgl_system_loadout() {
   return 0
 }
 
+ensure_cursor_optional() {
+  if [[ "$WANT_CURSOR" == "auto" ]]; then
+    if [[ "$INSTALL_PKGS" -eq 1 ]] && [[ -t 0 ]]; then
+      local ans=""
+      printf '\n%s▶ %sOptional — Cursor IDE%s\n' "$UI_MAG" "$UI_BLD" "$UI_R"
+      printf '%s%s%s\n' "$UI_DIM" "$(printf '─%.0s' {1..58})" "$UI_R"
+      printf '%s Cursor will be installed from:%s\n' "$UI_R" "$UI_R"
+      printf '%s %s%s\n\n' "$UI_DIM" "$CURSOR_RPM_URL" "$UI_R"
+      read -r -p "$(printf '%s▶%s Install Cursor now? [y/N]: ' "$UI_CYN" "$UI_R")" ans || true
+      ans="${ans//[[:space:]]/}"
+      ans="${ans,,}"
+      case "${ans:-n}" in
+        y|yes) WANT_CURSOR="yes" ;;
+        *) WANT_CURSOR="no" ;;
+      esac
+    else
+      WANT_CURSOR="no"
+    fi
+  fi
+
+  [[ "$WANT_CURSOR" == "no" ]] && {
+    ui_info "skipping Cursor. To install later: ./install.sh --with-cursor"
+    return 0
+  }
+  [[ "$INSTALL_PKGS" -eq 0 ]] && {
+    ui_warn "--with-cursor needs package install; re-run without --no-packages or install Cursor manually"
+    return 0
+  }
+  command -v dnf >/dev/null 2>&1 || return 0
+  if rpm_have cursor; then
+    ui_ok "cursor already installed"
+    return 0
+  fi
+  if [[ "$DRY_RUN" -eq 1 ]]; then
+    printf '%s[dry-run]%s would: sudo dnf install -y %s\n' "$UI_YLW" "$UI_R" "$CURSOR_RPM_URL"
+    return 0
+  fi
+  ui_section "Optional — Cursor IDE"
+  printf '%s · %sinstalling Cursor from official RPM URL…%s\n' "$UI_CYN" "$UI_DIM" "$UI_R"
+  run sudo dnf install -y "$CURSOR_RPM_URL"
+  if rpm_have cursor; then
+    ui_ok "cursor installed"
+  else
+    ui_warn "Cursor install command completed but package was not detected. Verify with: rpm -q cursor"
+  fi
+}
+
 backup_if_exists() {
   local path="$1"
   if [[ -e "$path" && "$DRY_RUN" -eq 0 ]]; then
@@ -727,6 +822,37 @@ backup_if_exists() {
   elif [[ -e "$path" ]]; then
     ui_info "would back up: $path"
   fi
+}
+
+ensure_linutil_aliases() {
+  local alias_line="alias linutil='curl -fsSL https://christitus.com/linux | sh'"
+  local start_marker="# >>> swaydots linutil alias >>>"
+  local end_marker="# <<< swaydots linutil alias <<<"
+  local -a rc_files=("$HOME/.bashrc" "$HOME/.zshrc")
+  local rc_file tmp
+
+  ui_section "Shell alias"
+  ui_info "ensuring linutil alias in ~/.bashrc and ~/.zshrc"
+
+  for rc_file in "${rc_files[@]}"; do
+    if [[ "$DRY_RUN" -eq 1 ]]; then
+      printf '%s[dry-run]%s would ensure linutil alias in %s\n' "$UI_YLW" "$UI_R" "$rc_file"
+      continue
+    fi
+    [[ -f "$rc_file" ]] || : >"$rc_file"
+    tmp="$(mktemp "${TMPDIR:-/tmp}/swaydots-rc.XXXXXX")"
+    awk -v s="$start_marker" -v e="$end_marker" '
+      $0 == s { skip=1; next }
+      $0 == e { skip=0; next }
+      skip != 1 { print }
+    ' "$rc_file" >"$tmp"
+    {
+      cat "$tmp"
+      printf '\n%s\n%s\n%s\n' "$start_marker" "$alias_line" "$end_marker"
+    } >"$rc_file"
+    rm -f "$tmp"
+    ui_ok "updated $rc_file with linutil alias"
+  done
 }
 
 choose_compositor_if_needed
@@ -746,7 +872,7 @@ ui_section "Paths"
 ui_info "config → $CONFIG"
 ui_info "wallpapers → $WALLPAPER_DIR_RESOLVED"
 ui_info "keyboard (xkb) → $KEYBOARD_LAYOUT_RESOLVED"
-ui_info "session → Hyprland (packages as detected or installed)"
+ui_info "session → $CHOSEN_SESSION (packages as detected or installed)"
 
 build_system_pkgs_array
 if [[ "$INSTALL_PKGS" -eq 1 && "$DRY_RUN" -eq 0 ]] && command -v dnf >/dev/null 2>&1; then
@@ -770,7 +896,9 @@ fi
 
 ensure_pavucontrol
 
-ensure_hyprland_qtutils_optional
+if [[ "$CHOSEN_SESSION" == "hyprland" ]]; then
+  ensure_hyprland_qtutils_optional
+fi
 
 install_chosen_display_manager
 
@@ -848,6 +976,8 @@ WALLPAPER_DIR=\"$esc\"
 
 write_wallpaper_env
 
+ensure_linutil_aliases
+
 if [[ "$DRY_RUN" -eq 0 ]]; then
   run mkdir -p "$WALLPAPER_DIR_RESOLVED"
 fi
@@ -859,7 +989,7 @@ for name in sway waybar wlogout kitty fuzzel; do
     backup_if_exists "$dest"
   fi
 done
-if [[ -e "$CONFIG/hypr" ]]; then
+if [[ "$CHOSEN_SESSION" == "hyprland" ]] && [[ -e "$CONFIG/hypr" ]]; then
   backup_if_exists "$CONFIG/hypr"
 fi
 
@@ -869,24 +999,37 @@ if [[ "$DRY_RUN" -eq 1 ]]; then
   run cp -a "$SCRIPT_DIR/wlogout" "$CONFIG/"
   run cp -a "$SCRIPT_DIR/kitty" "$CONFIG/"
   run cp -a "$SCRIPT_DIR/fuzzel" "$CONFIG/"
-  run cp -a "$SCRIPT_DIR/hypr" "$CONFIG/"
+  if [[ "$CHOSEN_SESSION" == "hyprland" ]]; then
+    run cp -a "$SCRIPT_DIR/hypr" "$CONFIG/"
+  fi
 else
   cp -a "$SCRIPT_DIR/sway" "$CONFIG/"
   cp -a "$SCRIPT_DIR/waybar" "$CONFIG/"
   cp -a "$SCRIPT_DIR/wlogout" "$CONFIG/"
   cp -a "$SCRIPT_DIR/kitty" "$CONFIG/"
   cp -a "$SCRIPT_DIR/fuzzel" "$CONFIG/"
-  cp -a "$SCRIPT_DIR/hypr" "$CONFIG/"
-  ui_ok "installed sway (scripts/themes), waybar, wlogout, kitty, fuzzel, hypr → $CONFIG"
+  if [[ "$CHOSEN_SESSION" == "hyprland" ]]; then
+    cp -a "$SCRIPT_DIR/hypr" "$CONFIG/"
+    ui_ok "installed sway (scripts/themes), waybar, wlogout, kitty, fuzzel, hypr → $CONFIG"
+  else
+    ui_ok "installed sway (scripts/themes), waybar, wlogout, kitty, fuzzel → $CONFIG"
+  fi
 fi
 
-# Waybar: hyprland/* modules (not sway/*).
-if [[ -f "$SCRIPT_DIR/waybar/config-hyprland.jsonc" ]]; then
+# Waybar: choose modules by selected compositor.
+if [[ "$CHOSEN_SESSION" == "hyprland" ]] && [[ -f "$SCRIPT_DIR/waybar/config-hyprland.jsonc" ]]; then
   if [[ "$DRY_RUN" -eq 1 ]]; then
     run cp -a "$SCRIPT_DIR/waybar/config-hyprland.jsonc" "$CONFIG/waybar/config.jsonc"
   else
     cp -a "$SCRIPT_DIR/waybar/config-hyprland.jsonc" "$CONFIG/waybar/config.jsonc"
     ui_ok "waybar: using Hyprland modules (config-hyprland.jsonc → ~/.config/waybar/config.jsonc)"
+  fi
+elif [[ "$CHOSEN_SESSION" == "sway" ]] && [[ -f "$SCRIPT_DIR/waybar/config.jsonc" ]]; then
+  if [[ "$DRY_RUN" -eq 1 ]]; then
+    run cp -a "$SCRIPT_DIR/waybar/config.jsonc" "$CONFIG/waybar/config.jsonc"
+  else
+    cp -a "$SCRIPT_DIR/waybar/config.jsonc" "$CONFIG/waybar/config.jsonc"
+    ui_ok "waybar: using Sway/default modules (config.jsonc)"
   fi
 fi
 
@@ -894,9 +1037,15 @@ write_keyboard_layout_configs "$KEYBOARD_LAYOUT_RESOLVED"
 
 # Executable scripts
 if [[ "$DRY_RUN" -eq 0 ]]; then
-  while IFS= read -r -d '' f; do
-    chmod +x "$f"
-  done < <(find "$CONFIG/sway" "$CONFIG/waybar" "$CONFIG/hypr" -type f \( -name '*.sh' -o -name 'wallpaper-picker.py' \) -print0 2>/dev/null || true)
+  if [[ "$CHOSEN_SESSION" == "hyprland" ]]; then
+    while IFS= read -r -d '' f; do
+      chmod +x "$f"
+    done < <(find "$CONFIG/sway" "$CONFIG/waybar" "$CONFIG/hypr" -type f \( -name '*.sh' -o -name 'wallpaper-picker.py' \) -print0 2>/dev/null || true)
+  else
+    while IFS= read -r -d '' f; do
+      chmod +x "$f"
+    done < <(find "$CONFIG/sway" "$CONFIG/waybar" -type f \( -name '*.sh' -o -name 'wallpaper-picker.py' \) -print0 2>/dev/null || true)
+  fi
   if [[ -f "$CONFIG/sway/theme-switch.sh" ]]; then
     chmod +x "$CONFIG/sway/theme-switch.sh"
   fi
@@ -910,5 +1059,7 @@ if [[ "$DRY_RUN" -eq 0 ]]; then
 fi
 
 ensure_lgl_system_loadout
+
+ensure_cursor_optional
 
 ui_footer
