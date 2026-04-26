@@ -9,10 +9,6 @@ INSTALL_PKGS=1
 WALLPAPER_DIR_CLI=""
 KEYBOARD_LAYOUT_CLI=""
 SKIP_DISPLAY_MANAGER=0
-# LGL selection:
-# - yes: install when explicitly requested via --with-lgl
-# - no: skip (default)
-WANT_LGL="no"
 WANT_CURSOR="auto"
 DISPLAY_MANAGER_CLI=""
 CHOSEN_DM=""
@@ -55,8 +51,6 @@ Usage: install.sh [options]
   and optionally installs Fedora packages (Hyprland or Sway compositor and stack).
 
   Interactive install (TTY): Step 1 login manager, Step 2 compositor, Step 3 keyboard (XKB), Step 4 dotfiles.
-  LGL (linuxgamerlife COPR) is disabled by default and never prompted.
-  Use --with-lgl only if you explicitly want it.
   Non-interactive: use the flags below.
 
   Shared stack: waybar, wlogout, kitty, fuzzel, grim, slurp, etc.
@@ -71,8 +65,6 @@ Options:
                      installs if needed with dnf.
   --skip-display-manager
                      Do not check, prompt, or install a display manager.
-  --with-lgl         Enable COPR and install lgl-system-loadout (no prompt).
-  --skip-lgl         Skip LGL install (default).
   --with-cursor      Install Cursor IDE from official RPM URL without prompting.
   --skip-cursor      Skip Cursor install without prompting.
   --compositor NAME  Choose compositor: hyprland or sway (default: hyprland).
@@ -116,8 +108,6 @@ while [[ $# -gt 0 ]]; do
       shift
       ;;
     --skip-display-manager) SKIP_DISPLAY_MANAGER=1 ;;
-    --with-lgl) WANT_LGL="yes" ;;
-    --skip-lgl) WANT_LGL="no" ;;
     --with-cursor) WANT_CURSOR="yes" ;;
     --skip-cursor) WANT_CURSOR="no" ;;
     --compositor)
@@ -159,11 +149,6 @@ ui_banner() {
   rule="$(printf '─%.0s' {1..58})"
   [[ "$DRY_RUN" -eq 1 ]] && mode+="dry-run"
   [[ "$INSTALL_PKGS" -eq 0 ]] && mode+="${mode:+ · }no-packages"
-  if [[ "$WANT_LGL" == "yes" ]]; then
-    mode+="${mode:+ · }with-lgl"
-  elif [[ "$WANT_LGL" == "no" ]]; then
-    mode+="${mode:+ · }skip-lgl"
-  fi
   if [[ "$WANT_CURSOR" == "yes" ]]; then
     mode+="${mode:+ · }with-cursor"
   elif [[ "$WANT_CURSOR" == "no" ]]; then
@@ -677,50 +662,6 @@ ensure_pavucontrol() {
   ui_ok "pavucontrol installed"
 }
 
-ensure_lgl_system_loadout() {
-  [[ "$WANT_LGL" == "no" ]] && {
-    ui_info "skipping LGL. To install later: ./install.sh --with-lgl"
-    return 0
-  }
-  [[ "$INSTALL_PKGS" -eq 0 ]] && {
-    ui_warn "--with-lgl needs package install; re-run without --no-packages or install lgl-system-loadout yourself"
-    return 0
-  }
-  command -v dnf >/dev/null 2>&1 || return 0
-  if rpm_have lgl-system-loadout; then
-    ui_ok "lgl-system-loadout already installed"
-    return 0
-  fi
-  if rpm_have hyprland-qt-support; then
-    ui_warn "Detected hyprland-qt-support; LGL may fail due to Qt mismatch, but trying install because you chose yes."
-  fi
-  if [[ "$DRY_RUN" -eq 1 ]]; then
-    printf '%s[dry-run]%s would: sudo dnf copr enable -y linuxgamerlife/lgl-system-loadout\n' "$UI_YLW" "$UI_R"
-    printf '%s[dry-run]%s would: sudo dnf install -y lgl-system-loadout\n' "$UI_YLW" "$UI_R"
-    return 0
-  fi
-  ui_section "Optional — LGL system loadout (COPR)"
-  printf '%s · %senabling linuxgamerlife/lgl-system-loadout…%s\n' "$UI_CYN" "$UI_DIM" "$UI_R"
-  run sudo dnf copr enable -y linuxgamerlife/lgl-system-loadout || true
-  printf '%s · %sinstalling lgl-system-loadout…%s\n' "$UI_CYN" "$UI_DIM" "$UI_R"
-  if run sudo dnf install -y --skip-broken lgl-system-loadout; then
-    if rpm_have lgl-system-loadout; then
-      ui_ok "lgl-system-loadout installed"
-      return 0
-    fi
-    ui_warn "LGL was skipped by dnf due to dependency conflicts (common Qt mismatch on Fedora COPRs)."
-    ui_warn "Retry later: sudo dnf upgrade --refresh && sudo dnf install lgl-system-loadout"
-    return 0
-  fi
-  if run sudo dnf install -y lgl-system-loadout; then
-    ui_ok "lgl-system-loadout installed"
-    return 0
-  fi
-  ui_warn "Could not install lgl-system-loadout — Qt6 mismatch between linuxgamerlife LGL and solopasha Hyprland COPR is common on Fedora."
-  ui_warn "Your Hyprland dotfiles are fine without LGL. Retry later: sudo dnf upgrade --refresh && sudo dnf install lgl-system-loadout"
-  return 0
-}
-
 ensure_cursor_optional() {
   if [[ "$WANT_CURSOR" == "auto" ]]; then
     if [[ "$INSTALL_PKGS" -eq 1 ]] && [[ -t 0 ]]; then
@@ -1009,8 +950,6 @@ if [[ "$DRY_RUN" -eq 0 ]]; then
     ui_warn "missing ~/.config/sway/themes/ — copy sway/themes from the repo, then: ~/.config/sway/theme-switch.sh catppuccin"
   fi
 fi
-
-ensure_lgl_system_loadout
 
 ensure_cursor_optional
 

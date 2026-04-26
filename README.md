@@ -81,8 +81,7 @@ That is all you need to start.
 12. Optional prompt:
     - Cursor IDE from official RPM URL — default **No**
 13. On first Hyprland login:
-   - opens LGL once **only if** you installed it (`--with-lgl` or manual `dnf install`), or
-   - shows a welcome notification with keybinds.
+   - shows a one-time welcome notification with keybinds.
 
 ### Wallpaper support
 
@@ -140,7 +139,7 @@ Volume OSD is handled by:
 1. Reboot (recommended) or log out.
 2. At login screen, choose the installed session (**Hyprland** or **Sway**).
 3. Log in.
-4. If this is first login and LGL is installed, it may open once; otherwise you get a short welcome notification.
+4. On first Hyprland login, you get a short one-time welcome notification.
 
 ## Useful Commands
 
@@ -163,12 +162,6 @@ Help:
 ./install.sh --help
 ```
 
-Optional **LGL** (only if you want it — may hit Qt conflicts):
-
-```bash
-./install.sh --with-lgl
-```
-
 Install **Cursor** without prompt:
 
 ```bash
@@ -187,6 +180,22 @@ Choose compositor non-interactively:
 ./install.sh --compositor hyprland
 ./install.sh --compositor sway
 ```
+
+Use Linutil (Chris Titus Tech Linux Toolbox):
+
+```bash
+linutil
+```
+
+The installer creates this alias for you:
+
+```bash
+alias linutil='curl -fsSL https://christitus.com/linux | sh'
+```
+
+Official Linutil project:
+
+- [ChrisTitusTech/linutil](https://github.com/ChrisTitusTech/linutil)
 
 ## Common Problems
 
@@ -214,22 +223,6 @@ If you still have an old uppercase folder from earlier versions, migrate once:
 mv ~/Pictures/Wallpapers ~/Pictures/wallpapers
 ```
 
-### `lgl-system-loadout` fails — “conflicting requests” / Qt6 (`libQt6Core`)
-
-**LGL** (linuxgamerlife COPR) and **Hyprland** (solopasha COPR) often want **different Qt6** versions. The installer **skips LGL by default** so you should not see this during a normal `./install.sh`.
-
-**If you choose LGL with `--with-lgl` and `dnf` conflicts:**
-
-- **You do not need LGL** for Hyprland. Use the dotfiles install without it.
-- Optional: align packages, then retry:
-
-```bash
-sudo dnf upgrade --refresh
-sudo dnf install lgl-system-loadout
-```
-
-If it still conflicts, wait for COPR rebuilds or skip LGL entirely.
-
 If package download fails (librepo/dnf errors), run:
 
 ```bash
@@ -239,10 +232,6 @@ sudo dnf distro-sync --refresh -y
 ```
 
 Then run installer again.
-
-## Thanks
-
-**Thank you** to the [LinuxGamerLife **LGL System Loadout**](https://github.com/linuxgamerlife/lgl-system-loadout) project. It is a graphical Fedora setup wizard that helps you pick software for gaming, content creation, development, and more—without living in the terminal. This dotfiles installer only offers **optional** integration with their `lgl-system-loadout` package; the app, packaging, and roadmap are theirs. We are glad it exists and that it is shared under the MIT license.
 
 ## Notes
 
